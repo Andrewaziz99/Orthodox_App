@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "title": "Orthodox Center for Biblical Studies for Children",
+    "description": "A center offering systematic Coptic Orthodox biblical study for children and youth through progressive curricula and a comprehensive digital platform."
+  },
+
+  "nav": {
+    "home": "Home",
+    "bible": "Holy Bible",
+    "about": "About Us",
+    "curricula": "Curricula",
+    "app": "The App",
+    "news": "News",
+    "vision": "Our Vision",
+    "contact": "Contact Us"
+  },
+
+  "common": {
+    "readMore": "Read More",
+    "knowMore": "Know More",
+    "viewAll": "View All",
+    "contactUs": "Contact Us",
+    "downloadApp": "Download App",
+    "language": "Language",
+    "arabic": "العربية",
+    "english": "English",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "loading": "Loading...",
+    "search": "Search",
+    "close": "Close",
+    "menu": "Menu",
+    "brandName": "Orthodox Center",
+    "tagline": "Biblical Studies for Children"
+  },
+
+  "hero": {
+    "badge": "Orthodox Biblical Studies",
+    "heading": "Systematic Biblical Study",
+    "headingHighlight": "for New Generations",
+    "subtitle": "We offer Coptic Orthodox biblical content through organized curricula for children and youth, via a digital platform that serves churches, servants, and children, aiming to establish a deep, systematic study of the Holy Bible.",
+    "cta": {
+      "primary": "Explore Curricula",
+      "secondary": "Learn About the App"
+    },
+    "stats": {
+      "curricula": { "value": "5", "label": "Educational Curricula" },
+      "audiences": { "value": "4", "label": "Target Audiences" },
+      "years": { "value": "11+", "label": "Years of Progressive Study" }
+    },
+    "scrollIndicator": "Discover More"
+  },
+
+  "about": {
+    "eyebrow": "Get to Know Us",
+    "heading": "Who We Are / What We Offer",
+    "whoWeAre": {
+      "title": "Who We Are",
+      "description": "Orthodox Center for Biblical Studies for Children is an educational biblical initiative aimed at providing organized, deep, and age-appropriate study for children and youth through high school within the church, through progressive curricula and a modern digital platform."
+    },
+    "whatWeOffer": {
+      "title": "What We Offer",
+      "description": "We offer an integrated path that includes multi-stage biblical curricula, an application serving children, servants, and church management, with tools for tracking, assignments, exams, spiritual encouragement, and continuous motivation."
+    },
+    "features": {
+      "curricula": {
+        "title": "Progressive Curricula",
+        "description": "5 curricula designed to suit different age groups from nursery to high school"
+      },
+      "platform": {
+        "title": "Integrated Digital Platform",
+        "description": "An application connecting churches, servants, and children in one educational experience"
+      },
+      "church": {
+        "title": "Serving the Church",
+        "description": "Practical tools that help churches and servants deliver more organized study"
+      },
+      "motivation": {
+        "title": "Motivation & Encouragement",
+        "description": "Points, badges, and marathons that make biblical study an enjoyable and interactive experience"
+      }
+    }
+  },
+
+  "audience": {
+    "eyebrow": "Target Audiences",
+    "heading": "Who Do We Serve?",
+    "subheading": "We serve churches, servants, and children through customized experiences for each group",
+    "churches": {
+      "title": "Churches",
+      "description": "A main dashboard for managing curricula, tracking growth across all classes, and organizing events at the school level.",
+      "features": ["Class & curricula management", "Track student progress", "Comprehensive reports"]
+    },
+    "servants": {
+      "title": "Servants",
+      "description": "Empowering servants through organized study curricula, auto-graded tests, regular attendance tracking, and direct communication tools.",
+      "features": ["Attendance tracking", "Assignment & exam grading", "Family communication"]
+    },
+    "children": {
+      "title": "Children",
+      "description": "An exciting interactive world where biblical lessons come alive through interactive stories, quizzes, and digital rewards.",
+      "features": ["Organized weekly lessons", "Encouraging points & badges", "Biblical marathons"]
+    }
+  },
+
+  "curricula": {
+    "eyebrow": "Educational Path",
+    "heading": "Our Educational Curricula",
+    "subheading": "A progressive path of biblical curricula carefully designed to suit different age groups",
+    "viewAll": "View All Curricula",
+    "content": "Course Content",
+    "audience": "Target Audience",
+    "duration": "Duration",
+    "items": {
+      "bibleCharacters": {
+        "title": "Bible Characters",
+        "duration": "2 years",
+        "audience": "Nursery & 1st grade",
+        "description": "A suitable introduction to building primary knowledge of Bible characters and key events.",
+        "ageRange": "4–6 years"
+      },
+      "biblicalConcepts": {
+        "title": "Biblical Concepts for Children",
+        "duration": "2 years",
+        "audience": "2nd & 3rd grade",
+        "description": "A curriculum that helps children understand basic biblical concepts in an age-appropriate way.",
+        "ageRange": "7–9 years"
+      },
+      "extendedStudy": {
+        "title": "Extended Bible Study",
+        "duration": "4 years",
+        "audience": "4th grade to 7th grade",
+        "description": "A deeper journey in organized and progressive Bible study.",
+        "ageRange": "10–13 years"
+      },
+      "servantPrep": {
+        "title": "Bible School Servant Preparation",
+        "duration": "3 years",
+        "audience": "8th grade to 10th grade",
+        "description": "A curriculum aimed at preparing a generation towards service, deeper understanding, and responsibility.",
+        "ageRange": "14–16 years"
+      }
+    }
+  },
+
+  "app": {
+    "eyebrow": "Digital Platform",
+    "heading": "A Digital Platform That Serves",
+    "headingHighlight": "Education & Follow-up",
+    "description": "Alongside the curricula, we offer a comprehensive digital application that helps churches, servants, and children track weekly study, assignments, exams, attendance, encouragement points, and progress within each curriculum.",
+    "cta": "Explore the App",
+    "features": {
+      "weeklyLessons": "Organized weekly lessons",
+      "assignments": "Assignments & exams",
+      "badges": "Encouraging points & badges",
+      "marathons": "Biblical marathons",
+      "reports": "Reports & tracking",
+      "bible": "Bible within the app",
+      "notifications": "Communication & notifications",
+      "store": "Rewards store with points"
+    }
+  },
+
+  "videos": {
+    "heading": "Introductory and Encouraging Videos",
+    "subheading": "Watch videos that introduce you more to the service, explain the app idea, and present spiritual messages.",
+    "items": [
+      { "key": "intro", "title": "Introductory Video", "icon": "🎬", "color": "text-teal-400" },
+      { "key": "appDemo", "title": "App Demo Video", "icon": "📱", "color": "text-amber-400" },
+      { "key": "encouragement", "title": "Encouragement Message Video", "icon": "💛", "color": "text-yellow-400" },
+      { "key": "vision", "title": "Future Vision Video", "icon": "🔭", "color": "text-purple-400" }
+    ]
+  },
+
+  "news": {
+    "eyebrow": "Latest News",
+    "heading": "News & Updates",
+    "viewAll": "View all updates",
+    "readMore": "Read more",
+    "items": [
+      {
+        "category": "App Updates",
+        "title": "New Updates in the App Experience",
+        "excerpt": "We are constantly working on developing the app experience to better support study, monitoring, and organization.",
+        "date": "March 2025",
+        "color": "bg-teal-950/60 text-teal-300 border-teal-800/50"
+      },
+      {
+        "category": "Curricula",
+        "title": "New Addition to Educational Content",
+        "excerpt": "Continuous expansion of the provided content to serve the different stages for children and youth.",
+        "date": "February 2025",
+        "color": "bg-amber-950/60 text-amber-300 border-amber-800/50"
+      },
+      {
+        "category": "New",
+        "title": "Future Steps in Development",
+        "excerpt": "We continue to work on expanding the impact of the service and providing more powerful and organized digital educational tools.",
+        "date": "January 2025",
+        "color": "bg-purple-950/60 text-purple-300 border-purple-800/50"
+      }
+    ]
+  },
+
+  "vision": {
+    "eyebrow": "Looking Forward",
+    "heading": "Our Vision for the Future",
+    "description": "We seek to build an integrated and long-term biblical track that serves children and youth within the church, with continuous development of curricula, expansion of service scope, and the addition of digital tools that help in learning, monitoring, and spiritual growth in a deeper and more impactful way.",
+    "pillars": [
+      { "icon": "📚", "label": "Developing current curricula" },
+      { "icon": "🌐", "label": "Adding new curricula and programs" },
+      { "icon": "🏛", "label": "Expanding to hymns, Coptic, and ritual" }
+    ],
+    "cta": "Learn more about our vision"
+  },
+
+  "cta": {
+    "heading": "Want to Learn More or Start Connecting With Us?",
+    "description": "If you represent a church, or want to know more about Orthodox Center, we'd love to hear from you.",
+    "primaryButton": "Contact Us",
+    "secondaryButton": "Request a Demo"
+  },
+
+  "footer": {
+    "description": "A comprehensive journey of biblical study through progressive curricula and a modern digital platform.",
+    "quickLinks": "Quick Links",
+    "support": "Support & Help",
+    "contact": "Contact Us",
+    "allRightsReserved": "All Rights Reserved",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "copyright": "© {{year}} Orthodox Center for Biblical Studies for Children — All Rights Reserved"
+  },
+
+  "bible": {
+    "title": "Bible Reader",
+    "oldTestament": "Old Testament",
+    "newTestament": "New Testament",
+    "books": "Books",
+    "chapter": "Chapter",
+    "verse": "Verse",
+    "verses": "Verses",
+    "search": "Search Bible verses...",
+    "searchResults": "Search Results",
+    "noResults": "No verses found containing \"{{term}}\"",
+    "selectPrompt": "Select a book and chapter to view verses",
+    "selected": "Selected",
+    "bookmark": "Bookmark",
+    "copyVerse": "Copy verse",
+    "copied": "Copied!",
+    "matches": {
+      "one": "1 match",
+      "other": "{{count}} matches"
+    },
+    "matchSummary": "{{matches}} found in {{verses}} verses",
+    "switchLanguage": "Switch to {{language}}"
+  },
+
+  "contact": {
+    "heading": "Contact Us",
+    "subheading": "We'd love to hear from you. Fill out the form or reach us directly.",
+    "form": {
+      "name": "Your Name",
+      "email": "Email Address",
+      "church": "Church Name (optional)",
+      "message": "Your Message",
+      "submit": "Send Message",
+      "success": "Your message has been sent successfully!",
+      "error": "An error occurred. Please try again."
+    }
+  },
+
+  "breadcrumb": {
+    "home": "Home"
+  },
+
+  "errors": {
+    "404": {
+      "title": "Page Not Found",
+      "description": "The page you're looking for doesn't exist.",
+      "cta": "Go Home"
+    }
+  }
+}

@@ -1,0 +1,275 @@
+/* app/globals.css */
+/* Global design tokens and base styles */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens ── */
+:root {
+  /* Primary: Teal */
+  --color-primary:     #0D9488;
+  --color-primary-dark: #0F766E;
+  --color-primary-deeper: #115E59;
+
+  /* Accent: Gold */
+  --color-gold:        #D4A017;
+  --color-gold-light:  #F0C040;
+  --color-gold-dark:   #B8860B;
+
+  /* Secondary: Crimson */
+  --color-crimson:     #DC2626;
+
+  /* Backgrounds - Light Mode */
+  --color-bg-1:        #FFFFFF;   /* main background */
+  --color-bg-2:        #F8F9FA;   /* card/section background */
+  --color-bg-3:        #F1F5F9;   /* elevated surface */
+
+  /* Text - Dark for light backgrounds */
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94A3B8;
+
+  /* Decorative gradients - Light mode */
+  --gradient-hero: radial-gradient(ellipse at 70% 50%, rgba(13, 148, 136, 0.08) 0%, transparent 70%),
+                   radial-gradient(ellipse at 20% 80%, rgba(212, 160, 23, 0.05) 0%, transparent 60%),
+                   linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+
+  --gradient-gold: linear-gradient(135deg, #D4A017, #F0C040, #D4A017);
+  --gradient-teal: linear-gradient(135deg, #0D9488, #14B8A6, #0D9488);
+  --gradient-card: linear-gradient(145deg, rgba(248, 249, 250, 0.9), rgba(241, 245, 249, 0.95));
+}
+
+/* ── Base Styles ── */
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-cairo), 'Cairo', sans-serif;
+  background-color: var(--color-bg-1);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+/* ── Arabic Typography Scale ── */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cairo), 'Cairo', sans-serif;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  p {
+    line-height: 1.8;
+    font-weight: 400;
+  }
+}
+
+/* ── Utility Classes ── */
+@layer utilities {
+  .font-cairo { font-family: var(--font-cairo), 'Cairo', sans-serif; }
+  .bg-hero { background: var(--gradient-hero); }
+  .text-gold { color: var(--color-gold); }
+  .text-gold-light { color: var(--color-gold-light); }
+  .text-teal { color: var(--color-primary); }
+  .bg-card { background: var(--gradient-card); }
+  .border-gold { border-color: var(--color-gold); }
+  .border-teal { border-color: var(--color-primary); }
+}
+
+/* ── Component Styles ── */
+@layer components {
+  /* Primary CTA Button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base
+           bg-teal-600 hover:bg-teal-700 text-white transition-all duration-200
+           shadow-md shadow-teal-300/40 hover:shadow-teal-400/60
+           hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Secondary/Gold Button */
+  .btn-gold {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base
+           bg-amber-600 hover:bg-amber-700 text-white transition-all duration-200
+           shadow-md shadow-amber-300/40 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Ghost/Outline Button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-base
+           border border-slate-300 hover:border-teal-600 text-slate-700 hover:text-teal-600
+           transition-all duration-200 hover:-translate-y-0.5;
+  }
+
+  /* Section Heading with decorative line */
+  .section-heading {
+    @apply text-3xl md:text-4xl font-bold text-slate-900 mb-4;
+  }
+
+  .section-subheading {
+    @apply text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto;
+  }
+
+  /* Gold accent line for section headings */
+  .heading-accent::after {
+    content: '';
+    @apply block w-16 h-1 bg-amber-500 mt-3 mx-auto rounded-full;
+  }
+
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-sm border border-slate-200
+           rounded-2xl p-6 transition-all duration-300
+           hover:border-teal-300 hover:bg-slate-50/60;
+  }
+
+  /* Feature icon container */
+  .feature-icon {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center
+           bg-teal-50 border border-teal-200 text-teal-600 text-xl mb-4;
+  }
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.3); }
+  50%       { box-shadow: 0 0 40px rgba(20, 184, 166, 0.6); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* ── Gradient Text Shimmer ── */
+.text-shimmer {
+  background: linear-gradient(
+    120deg,
+    #0F766E 0%,
+    #0D9488 25%,
+    #D4A017 50%,
+    #0D9488 75%,
+    #0F766E 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* ── Bible Reader Highlight ── */
+@keyframes highlightPulse {
+  0% {
+    color: #fbbf24;
+    text-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+  50% {
+    color: #fcd34d;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+  }
+  100% {
+    color: #fbbf24;
+    text-shadow: 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+.highlighted-word {
+  background: transparent;
+  color: #fbbf24;
+  font-weight: 700;
+  animation: highlightPulse 2s ease-in-out infinite;
+}
+
+/* ── Hover & Interaction Effects ── */
+
+/* Card lift on hover */
+.card-hoverable {
+  transition: transform 300ms ease, box-shadow 300ms ease;
+}
+.card-hoverable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(13, 148, 136, 0.1);
+}
+
+/* Button press effect */
+.btn-interactive {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.btn-interactive:hover {
+  transform: translateY(-2px);
+}
+.btn-interactive:active {
+  transform: translateY(0px);
+}
+
+/* Icon scale on parent hover */
+.icon-scale-wrapper {
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.group:hover .icon-scale-wrapper {
+  transform: scale(1.15);
+}
+
+/* Link underline reveal */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  inset-inline-start: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: width 300ms ease;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ── Accessibility: Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Scrollbar Styling ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F8F9FA; }
+::-webkit-scrollbar-thumb { background: #0D9488; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #14B8A6; }
+
+/* ── Section Spacing ── */
+.section-padding {
+  @apply py-16 md:py-24;
+}
+
+.container-max {
+  @apply max-w-7xl mx-auto px-6 md:px-8 lg:px-12;
+}
+
+/* ── Custom Utilities ── */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+

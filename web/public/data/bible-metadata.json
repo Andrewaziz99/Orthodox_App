@@ -1,0 +1,692 @@
+{
+  "en": {
+    "translation": "English NIV",
+    "testaments": [
+      {
+        "name": "Old",
+        "books": [
+          {
+            "number": 1,
+            "name": "Genesis",
+            "chapterCount": 50
+          },
+          {
+            "number": 2,
+            "name": "Exodus",
+            "chapterCount": 40
+          },
+          {
+            "number": 3,
+            "name": "Leviticus",
+            "chapterCount": 27
+          },
+          {
+            "number": 4,
+            "name": "Numbers",
+            "chapterCount": 36
+          },
+          {
+            "number": 5,
+            "name": "Deuteronomy",
+            "chapterCount": 34
+          },
+          {
+            "number": 6,
+            "name": "Joshua",
+            "chapterCount": 24
+          },
+          {
+            "number": 7,
+            "name": "Judges",
+            "chapterCount": 21
+          },
+          {
+            "number": 8,
+            "name": "Ruth",
+            "chapterCount": 4
+          },
+          {
+            "number": 9,
+            "name": "1 Samuel",
+            "chapterCount": 31
+          },
+          {
+            "number": 10,
+            "name": "2 Samuel",
+            "chapterCount": 24
+          },
+          {
+            "number": 11,
+            "name": "1 Kings",
+            "chapterCount": 22
+          },
+          {
+            "number": 12,
+            "name": "2 Kings",
+            "chapterCount": 25
+          },
+          {
+            "number": 13,
+            "name": "1 Chronicles",
+            "chapterCount": 29
+          },
+          {
+            "number": 14,
+            "name": "2 Chronicles",
+            "chapterCount": 36
+          },
+          {
+            "number": 15,
+            "name": "Ezra",
+            "chapterCount": 10
+          },
+          {
+            "number": 16,
+            "name": "Nehemiah",
+            "chapterCount": 13
+          },
+          {
+            "number": 17,
+            "name": "Esther",
+            "chapterCount": 10
+          },
+          {
+            "number": 18,
+            "name": "Job",
+            "chapterCount": 42
+          },
+          {
+            "number": 19,
+            "name": "Psalms",
+            "chapterCount": 150
+          },
+          {
+            "number": 20,
+            "name": "Proverbs",
+            "chapterCount": 31
+          },
+          {
+            "number": 21,
+            "name": "Ecclesiastes",
+            "chapterCount": 12
+          },
+          {
+            "number": 22,
+            "name": "Isaiah",
+            "chapterCount": 8
+          },
+          {
+            "number": 23,
+            "name": "Jeremiah",
+            "chapterCount": 66
+          },
+          {
+            "number": 24,
+            "name": "Lamentations",
+            "chapterCount": 52
+          },
+          {
+            "number": 25,
+            "name": "Ezekiel",
+            "chapterCount": 5
+          },
+          {
+            "number": 26,
+            "name": "Daniel",
+            "chapterCount": 48
+          },
+          {
+            "number": 27,
+            "name": "Hosea",
+            "chapterCount": 12
+          },
+          {
+            "number": 28,
+            "name": "Joel",
+            "chapterCount": 14
+          },
+          {
+            "number": 29,
+            "name": "Amos",
+            "chapterCount": 3
+          },
+          {
+            "number": 30,
+            "name": "Obadiah",
+            "chapterCount": 9
+          },
+          {
+            "number": 31,
+            "name": "Jonah",
+            "chapterCount": 1
+          },
+          {
+            "number": 32,
+            "name": "Micah",
+            "chapterCount": 4
+          },
+          {
+            "number": 33,
+            "name": "Nahum",
+            "chapterCount": 7
+          },
+          {
+            "number": 34,
+            "name": "Habakkuk",
+            "chapterCount": 3
+          },
+          {
+            "number": 35,
+            "name": "Zephaniah",
+            "chapterCount": 3
+          },
+          {
+            "number": 36,
+            "name": "Haggai",
+            "chapterCount": 3
+          },
+          {
+            "number": 37,
+            "name": "Zechariah",
+            "chapterCount": 2
+          },
+          {
+            "number": 38,
+            "name": "Malachi",
+            "chapterCount": 14
+          },
+          {
+            "number": 39,
+            "name": "Matthew",
+            "chapterCount": 4
+          }
+        ]
+      },
+      {
+        "name": "New",
+        "books": [
+          {
+            "number": 40,
+            "name": "Mark",
+            "chapterCount": 28
+          },
+          {
+            "number": 41,
+            "name": "Luke",
+            "chapterCount": 16
+          },
+          {
+            "number": 42,
+            "name": "John",
+            "chapterCount": 24
+          },
+          {
+            "number": 43,
+            "name": "Acts",
+            "chapterCount": 21
+          },
+          {
+            "number": 44,
+            "name": "Romans",
+            "chapterCount": 28
+          },
+          {
+            "number": 45,
+            "name": "1 Corinthians",
+            "chapterCount": 16
+          },
+          {
+            "number": 46,
+            "name": "2 Corinthians",
+            "chapterCount": 16
+          },
+          {
+            "number": 47,
+            "name": "Galatians",
+            "chapterCount": 13
+          },
+          {
+            "number": 48,
+            "name": "Ephesians",
+            "chapterCount": 6
+          },
+          {
+            "number": 49,
+            "name": "Philippians",
+            "chapterCount": 6
+          },
+          {
+            "number": 50,
+            "name": "Colossians",
+            "chapterCount": 4
+          },
+          {
+            "number": 51,
+            "name": "1 Thessalonians",
+            "chapterCount": 4
+          },
+          {
+            "number": 52,
+            "name": "2 Thessalonians",
+            "chapterCount": 5
+          },
+          {
+            "number": 53,
+            "name": "1 Timothy",
+            "chapterCount": 3
+          },
+          {
+            "number": 54,
+            "name": "2 Timothy",
+            "chapterCount": 6
+          },
+          {
+            "number": 55,
+            "name": "Titus",
+            "chapterCount": 4
+          },
+          {
+            "number": 56,
+            "name": "Philemon",
+            "chapterCount": 3
+          },
+          {
+            "number": 57,
+            "name": "Hebrews",
+            "chapterCount": 1
+          },
+          {
+            "number": 58,
+            "name": "James",
+            "chapterCount": 13
+          },
+          {
+            "number": 59,
+            "name": "1 Peter",
+            "chapterCount": 5
+          },
+          {
+            "number": 60,
+            "name": "2 Peter",
+            "chapterCount": 5
+          },
+          {
+            "number": 61,
+            "name": "1 John",
+            "chapterCount": 3
+          },
+          {
+            "number": 62,
+            "name": "2 John",
+            "chapterCount": 5
+          },
+          {
+            "number": 63,
+            "name": "3 John",
+            "chapterCount": 1
+          },
+          {
+            "number": 64,
+            "name": "Jude",
+            "chapterCount": 1
+          },
+          {
+            "number": 65,
+            "name": "Revelation",
+            "chapterCount": 1
+          },
+          {
+            "number": 66,
+            "name": "Book 66",
+            "chapterCount": 22
+          }
+        ]
+      }
+    ]
+  },
+  "ar": {
+    "translation": "Arabic Bible AVD 1999",
+    "testaments": [
+      {
+        "name": "Old",
+        "books": [
+          {
+            "number": 1,
+            "name": "Genesis",
+            "chapterCount": 50
+          },
+          {
+            "number": 2,
+            "name": "Exodus",
+            "chapterCount": 40
+          },
+          {
+            "number": 3,
+            "name": "Leviticus",
+            "chapterCount": 27
+          },
+          {
+            "number": 4,
+            "name": "Numbers",
+            "chapterCount": 36
+          },
+          {
+            "number": 5,
+            "name": "Deuteronomy",
+            "chapterCount": 34
+          },
+          {
+            "number": 6,
+            "name": "Joshua",
+            "chapterCount": 24
+          },
+          {
+            "number": 7,
+            "name": "Judges",
+            "chapterCount": 21
+          },
+          {
+            "number": 8,
+            "name": "Ruth",
+            "chapterCount": 4
+          },
+          {
+            "number": 9,
+            "name": "1 Samuel",
+            "chapterCount": 31
+          },
+          {
+            "number": 10,
+            "name": "2 Samuel",
+            "chapterCount": 24
+          },
+          {
+            "number": 11,
+            "name": "1 Kings",
+            "chapterCount": 22
+          },
+          {
+            "number": 12,
+            "name": "2 Kings",
+            "chapterCount": 25
+          },
+          {
+            "number": 13,
+            "name": "1 Chronicles",
+            "chapterCount": 29
+          },
+          {
+            "number": 14,
+            "name": "2 Chronicles",
+            "chapterCount": 36
+          },
+          {
+            "number": 15,
+            "name": "Ezra",
+            "chapterCount": 10
+          },
+          {
+            "number": 16,
+            "name": "Nehemiah",
+            "chapterCount": 13
+          },
+          {
+            "number": 17,
+            "name": "Esther",
+            "chapterCount": 10
+          },
+          {
+            "number": 18,
+            "name": "Job",
+            "chapterCount": 42
+          },
+          {
+            "number": 19,
+            "name": "Psalms",
+            "chapterCount": 150
+          },
+          {
+            "number": 20,
+            "name": "Proverbs",
+            "chapterCount": 31
+          },
+          {
+            "number": 21,
+            "name": "Ecclesiastes",
+            "chapterCount": 12
+          },
+          {
+            "number": 22,
+            "name": "Isaiah",
+            "chapterCount": 8
+          },
+          {
+            "number": 23,
+            "name": "Jeremiah",
+            "chapterCount": 66
+          },
+          {
+            "number": 24,
+            "name": "Lamentations",
+            "chapterCount": 52
+          },
+          {
+            "number": 25,
+            "name": "Ezekiel",
+            "chapterCount": 5
+          },
+          {
+            "number": 26,
+            "name": "Daniel",
+            "chapterCount": 48
+          },
+          {
+            "number": 27,
+            "name": "Hosea",
+            "chapterCount": 12
+          },
+          {
+            "number": 28,
+            "name": "Joel",
+            "chapterCount": 14
+          },
+          {
+            "number": 29,
+            "name": "Amos",
+            "chapterCount": 3
+          },
+          {
+            "number": 30,
+            "name": "Obadiah",
+            "chapterCount": 9
+          },
+          {
+            "number": 31,
+            "name": "Jonah",
+            "chapterCount": 1
+          },
+          {
+            "number": 32,
+            "name": "Micah",
+            "chapterCount": 4
+          },
+          {
+            "number": 33,
+            "name": "Nahum",
+            "chapterCount": 7
+          },
+          {
+            "number": 34,
+            "name": "Habakkuk",
+            "chapterCount": 3
+          },
+          {
+            "number": 35,
+            "name": "Zephaniah",
+            "chapterCount": 3
+          },
+          {
+            "number": 36,
+            "name": "Haggai",
+            "chapterCount": 3
+          },
+          {
+            "number": 37,
+            "name": "Zechariah",
+            "chapterCount": 2
+          },
+          {
+            "number": 38,
+            "name": "Malachi",
+            "chapterCount": 14
+          },
+          {
+            "number": 39,
+            "name": "Matthew",
+            "chapterCount": 4
+          }
+        ]
+      },
+      {
+        "name": "New",
+        "books": [
+          {
+            "number": 40,
+            "name": "Mark",
+            "chapterCount": 28
+          },
+          {
+            "number": 41,
+            "name": "Luke",
+            "chapterCount": 16
+          },
+          {
+            "number": 42,
+            "name": "John",
+            "chapterCount": 24
+          },
+          {
+            "number": 43,
+            "name": "Acts",
+            "chapterCount": 21
+          },
+          {
+            "number": 44,
+            "name": "Romans",
+            "chapterCount": 28
+          },
+          {
+            "number": 45,
+            "name": "1 Corinthians",
+            "chapterCount": 16
+          },
+          {
+            "number": 46,
+            "name": "2 Corinthians",
+            "chapterCount": 16
+          },
+          {
+            "number": 47,
+            "name": "Galatians",
+            "chapterCount": 13
+          },
+          {
+            "number": 48,
+            "name": "Ephesians",
+            "chapterCount": 6
+          },
+          {
+            "number": 49,
+            "name": "Philippians",
+            "chapterCount": 6
+          },
+          {
+            "number": 50,
+            "name": "Colossians",
+            "chapterCount": 4
+          },
+          {
+            "number": 51,
+            "name": "1 Thessalonians",
+            "chapterCount": 4
+          },
+          {
+            "number": 52,
+            "name": "2 Thessalonians",
+            "chapterCount": 5
+          },
+          {
+            "number": 53,
+            "name": "1 Timothy",
+            "chapterCount": 3
+          },
+          {
+            "number": 54,
+            "name": "2 Timothy",
+            "chapterCount": 6
+          },
+          {
+            "number": 55,
+            "name": "Titus",
+            "chapterCount": 4
+          },
+          {
+            "number": 56,
+            "name": "Philemon",
+            "chapterCount": 3
+          },
+          {
+            "number": 57,
+            "name": "Hebrews",
+            "chapterCount": 1
+          },
+          {
+            "number": 58,
+            "name": "James",
+            "chapterCount": 13
+          },
+          {
+            "number": 59,
+            "name": "1 Peter",
+            "chapterCount": 5
+          },
+          {
+            "number": 60,
+            "name": "2 Peter",
+            "chapterCount": 5
+          },
+          {
+            "number": 61,
+            "name": "1 John",
+            "chapterCount": 3
+          },
+          {
+            "number": 62,
+            "name": "2 John",
+            "chapterCount": 5
+          },
+          {
+            "number": 63,
+            "name": "3 John",
+            "chapterCount": 1
+          },
+          {
+            "number": 64,
+            "name": "Jude",
+            "chapterCount": 1
+          },
+          {
+            "number": 65,
+            "name": "Revelation",
+            "chapterCount": 1
+          },
+          {
+            "number": 66,
+            "name": "Book 66",
+            "chapterCount": 22
+          }
+        ]
+      }
+    ]
+  }
+}
