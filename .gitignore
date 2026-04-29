@@ -1,4 +1,7 @@
 APP_DOCUMENTATION.md
-
+.vscode
 /web/node_modules
 /backend/node_modules
+.opencode
+.specify
+AGENTS.md
