@@ -31,7 +31,7 @@ async function request<T>(
 ): Promise<T> {
   const { requiresAuth = true, headers = {}, ...restOptions } = options;
 
-  const requestHeaders: HeadersInit = {
+  const requestHeaders: any = {
     'Content-Type': 'application/json',
     ...headers,
   };
@@ -49,7 +49,7 @@ async function request<T>(
   try {
     const response = await fetch(url, {
       ...restOptions,
-      headers: requestHeaders,
+      headers: requestHeaders as HeadersInit,
     });
 
     // Handle non-OK responses
