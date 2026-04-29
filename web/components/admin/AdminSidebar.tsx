@@ -97,7 +97,7 @@ export default function AdminSidebar() {
           </p>
         </div>
         <Link
-          href="/login"
+          href="/auth/login"
           onClick={() => {
             // Clear session on logout
             if (typeof window !== 'undefined') {

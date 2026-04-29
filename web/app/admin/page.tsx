@@ -38,15 +38,15 @@ export default function AdminDashboardPage() {
   const loadStats = async () => {
     try {
       const [churches, users] = await Promise.all([
-        getChurches().catch(() => []),
-        getUsers().catch(() => []),
+        getChurches({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
+        getUsers({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
       ]);
 
       setStats({
-        totalChurches: churches.length,
-        totalUsers: users.length,
+        totalChurches: churches.meta.total,
+        totalUsers: users.meta.total,
         totalCurricula: 5,
-        activeStudents: users.filter((u) => u.role === 'child').length,
+        activeStudents: users.data.filter((u) => u.role === 'child').length,
       });
     } catch (error) {
       console.error('Failed to load stats:', error);

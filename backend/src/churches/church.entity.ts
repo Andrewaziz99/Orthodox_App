@@ -16,6 +16,18 @@ export class Church {
   maxChildren: number = 0;
 
   @Column({ nullable: true })
+  location?: string;
+
+  @Column({ nullable: true })
+  address?: string;
+
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Column({ nullable: true })
+  email?: string;
+
+  @Column({ nullable: true })
   subscriptionStartDate?: Date;
 
   @OneToMany(() => User, (user) => user.church)

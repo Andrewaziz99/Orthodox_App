@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 import { Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -17,16 +18,24 @@ interface AuthenticatedRequest extends ExpressRequest {
 }
 
 class LoginDto {
+  @IsEmail()
   readonly email!: string;
+
+  @IsString()
+  @MinLength(6)
   readonly password!: string;
 }
 
 class SendOtpDto {
+  @IsString()
   readonly phone!: string;
 }
 
 class VerifyOtpDto {
+  @IsString()
   readonly phone!: string;
+
+  @IsString()
   readonly code!: string;
 }
 

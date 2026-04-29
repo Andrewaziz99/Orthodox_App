@@ -21,13 +21,21 @@ export interface AuthToken {
 }
 
 /**
- * Store authentication token and user data
+ * Store authentication token and user data.
+ * Writes to both localStorage (client reads) and a cookie (middleware reads).
  */
 export function setSession(token: string, user: AuthUser): void {
   if (typeof window === 'undefined') return;
-  
+
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+  // Also persist to cookie so Next.js middleware can check auth server-side.
+  // Not httpOnly — client JS needs read access too. Use Secure in production.
+  const isProduction = process.env.NODE_ENV === 'production';
+  const secure = isProduction ? '; Secure' : '';
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `auth_token=${token}; Path=/; Expires=${expires}; SameSite=Lax${secure}`;
 }
 
 /**
@@ -75,9 +83,12 @@ export function hasRole(requiredRoles: string[]): boolean {
  */
 export function clearSession(): void {
   if (typeof window === 'undefined') return;
-  
+
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+
+  // Expire the cookie so middleware stops allowing access immediately
+  document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
 }
 
 /**

@@ -1,78 +1,51 @@
-/**
- * Protected Route Middleware
- * HOC and hooks for route protection
- */
+"use client";
 
-'use client';
-
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthenticated, hasRole, getUser } from '../auth/session';
+import { getUser, isAuthenticated } from './session';
 
 /**
- * Hook to protect routes - redirects if not authenticated
+ * Synchronous helper to check if current user is a super admin
  */
-export function useRequireAuth(requiredRoles?: string[]) {
+export function isSuperAdmin(): boolean {
+  const u = getUser();
+  return !!u && u.role === 'super_admin';
+}
+
+/**
+ * Hook used across admin client pages/layouts to ensure the user is authenticated.
+ * Returns an object with `isChecking` so callers can delay rendering until check finishes.
+ */
+export function useRequireAdmin() {
   const router = useRouter();
-  const [isChecking, setIsChecking] = React.useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.push('/login');
+      const from = typeof window !== 'undefined' ? window.location.pathname : '/';
+      router.push(`/login?from=${encodeURIComponent(from)}`);
       return;
     }
 
-    if (requiredRoles && requiredRoles.length > 0) {
-      if (!hasRole(requiredRoles)) {
-        router.push('/unauthorized');
-        return;
-      }
-    }
-
     setIsChecking(false);
-  }, [router, requiredRoles]);
+  }, [router]);
 
-  return {
-    user: getUser(),
-    isAuthenticated: isAuthenticated(),
-    isChecking,
-  };
+  return { isChecking };
 }
 
 /**
- * Hook for admin-only routes
- */
-export function useRequireAdmin() {
-  return useRequireAuth(['super_admin', 'church_admin']);
-}
-
-/**
- * Hook for super admin only routes
+ * Hook that enforces the current user is a super admin.
+ * If not, redirects back to the admin dashboard.
  */
 export function useRequireSuperAdmin() {
-  return useRequireAuth(['super_admin']);
-}
+  const router = useRouter();
 
-/**
- * Check if user can access admin panel
- */
-export function canAccessAdmin(): boolean {
-  return hasRole(['super_admin', 'church_admin']);
-}
-
-/**
- * Check if user is super admin
- */
-export function isSuperAdmin(): boolean {
-  return hasRole(['super_admin']);
-}
-
-/**
- * Get current user's church ID
- */
-export function getCurrentChurchId(): string | null {
-  const user = getUser();
-  return user?.churchId || null;
+  useEffect(() => {
+    const user = getUser();
+    if (!user || user.role !== 'super_admin') {
+      router.push('/admin');
+    }
+  }, [router]);
 }
 
 export { getUser };
