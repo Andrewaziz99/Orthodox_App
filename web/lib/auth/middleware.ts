@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated, hasRole, getUser } from '../auth/session';
 
@@ -14,6 +14,7 @@ import { isAuthenticated, hasRole, getUser } from '../auth/session';
  */
 export function useRequireAuth(requiredRoles?: string[]) {
   const router = useRouter();
+  const [isChecking, setIsChecking] = React.useState(true);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -24,13 +25,17 @@ export function useRequireAuth(requiredRoles?: string[]) {
     if (requiredRoles && requiredRoles.length > 0) {
       if (!hasRole(requiredRoles)) {
         router.push('/unauthorized');
+        return;
       }
     }
+
+    setIsChecking(false);
   }, [router, requiredRoles]);
 
   return {
     user: getUser(),
     isAuthenticated: isAuthenticated(),
+    isChecking,
   };
 }
 
@@ -69,3 +74,5 @@ export function getCurrentChurchId(): string | null {
   const user = getUser();
   return user?.churchId || null;
 }
+
+export { getUser };
