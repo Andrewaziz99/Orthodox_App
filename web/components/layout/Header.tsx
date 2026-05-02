@@ -26,6 +26,9 @@ const navItems = [
 export default function Header() {
   const { t } = useLang();
   const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/admin');
+
+  if (isAdminPage) return null;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

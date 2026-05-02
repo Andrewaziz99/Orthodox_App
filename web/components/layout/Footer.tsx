@@ -14,7 +14,7 @@ export default function Footer() {
   const pathname = usePathname();
   const { t, dir } = useLang();
   
-  if (pathname === '/bible') return null;
+  if (pathname === '/bible' || pathname?.startsWith('/admin')) return null;
   const currentYear = new Date().getFullYear();
 
   const footerLinks = [
