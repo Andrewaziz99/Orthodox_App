@@ -25,10 +25,12 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:block w-64 border-r border-gray-200">
-        <AdminSidebar />
+      <aside className="hidden lg:block w-64 border-r border-gray-200 shrink-0">
+        <div className="sticky top-0 h-screen overflow-y-auto">
+          <AdminSidebar />
+        </div>
       </aside>
 
       {/* Sidebar - Mobile */}
@@ -38,18 +40,18 @@ export default function AdminLayout({
             className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="fixed inset-y-0 left-0 w-64 z-50 lg:hidden">
+          <aside className="fixed inset-y-0 left-0 w-64 z-50 lg:hidden h-screen overflow-y-auto bg-white">
             <AdminSidebar />
           </aside>
         </>
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile menu button can be added here if needed */}
         
-        {/* Scrollable content area */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Content area */}
+        <main className="flex-1">
           {children}
         </main>
       </div>

@@ -7,31 +7,49 @@ import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { SectionHeader, Card } from '../ui';
 import { BookOpen, Smartphone, Church, Sparkles } from 'lucide-react';
+import type { SectionContent } from '@/lib/api/content';
 
-export default function AboutSection() {
-  const { t, dir } = useLang();
+interface AboutSectionProps {
+  content?: SectionContent;
+}
+
+export default function AboutSection({ content = {} }: AboutSectionProps) {
+  const { t, dir, locale } = useLang();
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Helper: prefer DB value, fall back to locale JSON
+  const c = (key: string, fallback: string) =>
+    content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar || fallback;
+
+  // Features: try to parse JSON from DB, fall back to locale
+  let featuresData: any;
+  try {
+    const raw = content['features']?.[locale as 'ar' | 'en'] || content['features']?.ar;
+    featuresData = raw ? JSON.parse(raw) : null;
+  } catch {
+    featuresData = null;
+  }
 
   const features = [
     {
       icon: <BookOpen className="w-6 h-6 text-teal-600" />,
-      title: t('about.features.curricula.title'),
-      desc: t('about.features.curricula.description'),
+      title: featuresData?.curricula?.title || t('about.features.curricula.title'),
+      desc: featuresData?.curricula?.description || t('about.features.curricula.description'),
     },
     {
       icon: <Smartphone className="w-6 h-6 text-amber-600" />,
-      title: t('about.features.platform.title'),
-      desc: t('about.features.platform.description'),
+      title: featuresData?.platform?.title || t('about.features.platform.title'),
+      desc: featuresData?.platform?.description || t('about.features.platform.description'),
     },
     {
       icon: <Church className="w-6 h-6 text-purple-600" />,
-      title: t('about.features.church.title'),
-      desc: t('about.features.church.description'),
+      title: featuresData?.church?.title || t('about.features.church.title'),
+      desc: featuresData?.church?.description || t('about.features.church.description'),
     },
     {
       icon: <Sparkles className="w-6 h-6 text-rose-600" />,
-      title: t('about.features.motivation.title'),
-      desc: t('about.features.motivation.description'),
+      title: featuresData?.motivation?.title || t('about.features.motivation.title'),
+      desc: featuresData?.motivation?.description || t('about.features.motivation.description'),
     },
   ];
 
@@ -66,8 +84,8 @@ export default function AboutSection() {
       <div className="container-max">
         <div className="about-header">
           <SectionHeader 
-            eyebrow={t('about.eyebrow')}
-            heading={t('about.heading')}
+            eyebrow={c('eyebrow', t('about.eyebrow'))}
+            heading={c('heading', t('about.heading'))}
             centered
             className="mb-20"
           />
@@ -78,17 +96,17 @@ export default function AboutSection() {
           <div className="about-content space-y-12">
             <div className="about-content-block relative">
               <div className="absolute -start-4 top-0 w-1 h-full bg-teal-500 rounded-full opacity-20" />
-              <h3 className="text-3xl font-black text-slate-900 mb-6">{t('about.whoWeAre.title')}</h3>
+              <h3 className="text-3xl font-black text-slate-900 mb-6">{c('whoWeAreTitle', t('about.whoWeAre.title'))}</h3>
               <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                {t('about.whoWeAre.description')}
+                {c('whoWeAreDescription', t('about.whoWeAre.description'))}
               </p>
             </div>
 
             <div className="about-content-block relative">
               <div className="absolute -start-4 top-0 w-1 h-full bg-amber-500 rounded-full opacity-20" />
-              <h3 className="text-3xl font-black text-slate-900 mb-6">{t('about.whatWeOffer.title')}</h3>
+              <h3 className="text-3xl font-black text-slate-900 mb-6">{c('whatWeOfferTitle', t('about.whatWeOffer.title'))}</h3>
               <p className="text-xl text-slate-600 leading-relaxed font-medium">
-                {t('about.whatWeOffer.description')}
+                {c('whatWeOfferDescription', t('about.whatWeOffer.description'))}
               </p>
             </div>
           </div>

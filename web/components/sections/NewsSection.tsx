@@ -1,3 +1,4 @@
+// components/sections/NewsSection.tsx
 "use client";
 
 import React, { useRef } from 'react';
@@ -7,12 +8,31 @@ import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { SectionHeader, Card, Badge, Button } from '../ui';
 import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
-import { news } from '@/lib/data/news';
+import { news as staticNews } from '@/lib/data/news';
+import type { DynamicNewsArticle } from '@/lib/api/content';
 
-export const NewsSection = () => {
+interface NewsSectionProps {
+  content?: DynamicNewsArticle[];
+  sectionContent?: any;
+}
+
+export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
   const { t, locale, dir } = useLang();
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const sectionRef = useRef<HTMLElement>(null);
+
+  const featuredIds = JSON.parse(sectionContent?.featuredIds?.en || '[]');
+
+  // If we have dynamic content but NO featured IDs are selected, hide the whole section
+  if (content && content.length > 0 && featuredIds.length === 0) return <div className="hidden" id="news-hidden-marker" />;
+
+  // Fallback to static if backend didn't provide data
+  const dataList = (content && content.length > 0) ? content : staticNews;
+  
+  // Filter by featured selection
+  const publishedList = (content && content.length > 0) 
+    ? (dataList as DynamicNewsArticle[]).filter(n => n.published && featuredIds.includes(n.id))
+    : dataList;
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
@@ -37,8 +57,8 @@ export const NewsSection = () => {
       <div className="container-max">
         <div className="news-header-row flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
           <SectionHeader 
-            eyebrow={t('news.eyebrow')}
-            heading={t('news.heading')}
+            eyebrow={sectionContent?.eyebrow?.[locale] || sectionContent?.eyebrow?.ar || t('news.eyebrow')}
+            heading={sectionContent?.heading?.[locale] || sectionContent?.heading?.ar || t('news.heading')}
             className="mb-0"
           />
           <Button variant="ghost" size="sm" href="/news" icon={<ArrowIcon className="w-4 h-4" />} iconPosition="end" className="btn-interactive">
@@ -47,52 +67,59 @@ export const NewsSection = () => {
         </div>
 
         <div className="news-grid grid md:grid-cols-3 gap-8">
-          {news.slice(0, 3).map((item, index) => (
-            <Card 
-              key={item.slug} 
-              variant="elevated" 
-              href={`/news/${item.slug}`}
-              className="news-card group flex flex-col p-4 h-full card-hoverable"
-            >
-              <div className="aspect-[16/10] bg-slate-100 rounded-2xl mb-6 overflow-hidden relative">
-                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent z-10" />
-                 {item.image ? (
-                   <Image 
-                     src={item.image} 
-                     alt={item.title[locale]} 
-                     fill 
-                     className="object-cover group-hover:scale-105 transition-transform duration-700"
-                   />
-                 ) : (
-                   <div className="absolute inset-0 bg-slate-200" />
-                 )}
-              </div>
+          {publishedList.slice(0, 3).map((item: any) => {
+            const getStr = (field: string) => {
+              if (item[`${field}Ar`]) return locale === 'ar' ? item[`${field}Ar`] : item[`${field}En`];
+              return item[field]?.[locale] || item[field]?.ar || '';
+            };
 
-              <div className="flex items-center gap-3 mb-4">
-                 <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 uppercase tracking-tighter">
-                   {item.category[locale]}
-                 </Badge>
-                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>{item.date}</span>
-                 </div>
-              </div>
+            return (
+              <Card 
+                key={item.slug} 
+                variant="elevated" 
+                href={`/news/${item.slug}`}
+                className="news-card group flex flex-col p-4 h-full card-hoverable"
+              >
+                <div className="aspect-[16/10] bg-slate-100 rounded-2xl mb-6 overflow-hidden relative">
+                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent z-10" />
+                   {item.image ? (
+                     <Image 
+                       src={item.image} 
+                       alt={getStr('title')} 
+                       fill 
+                       className="object-cover group-hover:scale-105 transition-transform duration-700"
+                     />
+                   ) : (
+                     <div className="absolute inset-0 bg-slate-200" />
+                   )}
+                </div>
 
-              <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-teal-600 transition-colors leading-tight">
-                {item.title[locale]}
-              </h3>
-              <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">
-                {item.excerpt[locale]}
-              </p>
+                <div className="flex items-center gap-3 mb-4">
+                   <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 uppercase tracking-tighter">
+                     {getStr('category')}
+                   </Badge>
+                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{item.date}</span>
+                   </div>
+                </div>
 
-              <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-sm font-bold text-teal-600 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform inline-flex items-center gap-2">
-                   {t('news.readMore')}
-                   <ArrowIcon className="w-4 h-4" />
-                </span>
-              </div>
-            </Card>
-          ))}
+                <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-teal-600 transition-colors leading-tight">
+                  {getStr('title')}
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">
+                  {getStr('excerpt')}
+                </p>
+
+                <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-sm font-bold text-teal-600 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform inline-flex items-center gap-2">
+                     {t('news.readMore')}
+                     <ArrowIcon className="w-4 h-4" />
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </section>

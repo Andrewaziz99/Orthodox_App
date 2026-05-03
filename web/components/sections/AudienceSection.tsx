@@ -9,10 +9,29 @@ import { SectionHeader, Card, Badge } from '../ui';
 import { Church, Users, GraduationCap, CheckCircle2 } from 'lucide-react';
 import { audiences } from '@/lib/data/audiences';
 import { cn } from '@/lib/utils/cn';
+import type { SectionContent } from '@/lib/api/content';
 
-export default function AudienceSection() {
-  const { t } = useLang();
+interface AudienceSectionProps {
+  content?: SectionContent;
+}
+
+export default function AudienceSection({ content = {} }: AudienceSectionProps) {
+  const { t, locale } = useLang();
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Helper: prefer DB value, fall back to locale JSON
+  const c = (key: string, fallback: string) =>
+    content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar || fallback;
+
+  // Helper: parse JSON from DB
+  const getJsonField = (key: string) => {
+    try {
+      const raw = content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar;
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
 
   const iconMap: Record<string, any> = {
     Church: Church,
@@ -49,9 +68,9 @@ export default function AudienceSection() {
       <div className="container-max">
         <div className="audience-header">
           <SectionHeader 
-            eyebrow={t('audience.eyebrow')}
-            heading={t('audience.heading')}
-            description={t('audience.subheading')}
+            eyebrow={c('eyebrow', t('audience.eyebrow'))}
+            heading={c('heading', t('audience.heading'))}
+            description={c('subheading', t('audience.subheading'))}
             centered
             className="mb-20"
           />
@@ -62,9 +81,13 @@ export default function AudienceSection() {
             const Icon = iconMap[audience.icon] || Church;
             const colors = colorConfig[audience.color] || colorConfig.teal;
             
-            // Get translated description from i18n since it's a long block
-            const description = t(`audience.${audience.id}.description`);
-            const translatedFeatures = t(`audience.${audience.id}.features`, { returnObjects: true }) as unknown as string[];
+            // Try to get data from DB JSON field matching audience.id
+            const dbData = getJsonField(audience.id);
+
+            // Get translated description from i18n or DB
+            const title = dbData?.title || t(`audience.${audience.id}.title`);
+            const description = dbData?.description || t(`audience.${audience.id}.description`);
+            const features = dbData?.features || (t(`audience.${audience.id}.features`, { returnObjects: true }) as unknown as string[]);
 
             return (
               <Card 
@@ -85,7 +108,7 @@ export default function AudienceSection() {
 
                 {/* Content */}
                 <h3 className="text-2xl font-black text-slate-900 mb-4">
-                  {t(`audience.${audience.id}.title`)}
+                  {title}
                 </h3>
                 <p className="text-slate-600 text-sm leading-relaxed mb-8 flex-1">
                   {description}
@@ -93,7 +116,7 @@ export default function AudienceSection() {
 
                 {/* Features List */}
                 <div className="space-y-3 mb-8">
-                  {Array.isArray(translatedFeatures) && translatedFeatures.map((feature, fIdx) => (
+                  {Array.isArray(features) && features.map((feature: string, fIdx: number) => (
                     <div key={fIdx} className="flex items-start gap-2 group/feat">
                       <CheckCircle2 className={cn("w-4 h-4 mt-0.5 transition-transform group-hover/feat:scale-125", colors.text)} />
                       <span className="text-sm font-bold text-slate-700">{feature}</span>
