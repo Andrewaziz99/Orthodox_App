@@ -29,9 +29,11 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
   // Fallback to static if backend didn't provide data
   const dataList = (content && content.length > 0) ? content : staticNews;
   
-  // Filter by featured selection
+  // Filter by featured selection and SORT by featuredIds order
   const publishedList = (content && content.length > 0) 
-    ? (dataList as DynamicNewsArticle[]).filter(n => n.published && featuredIds.includes(n.id))
+    ? (dataList as DynamicNewsArticle[])
+        .filter(n => n.published && featuredIds.includes(n.id))
+        .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id))
     : dataList;
 
   useGSAP(() => {
@@ -66,7 +68,7 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
           </Button>
         </div>
 
-        <div className="news-grid grid md:grid-cols-3 gap-8">
+        <div className="news-grid grid md:grid-cols-3 gap-8 items-stretch">
           {publishedList.slice(0, 3).map((item: any) => {
             const getStr = (field: string) => {
               if (item[`${field}Ar`]) return locale === 'ar' ? item[`${field}Ar`] : item[`${field}En`];
@@ -80,19 +82,18 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
                 href={`/news/${item.slug}`}
                 className="news-card group flex flex-col p-4 h-full card-hoverable"
               >
-                <div className="aspect-[16/10] bg-slate-100 rounded-2xl mb-6 overflow-hidden relative">
-                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent z-10" />
-                   {item.image ? (
-                     <Image 
-                       src={item.image} 
-                       alt={getStr('title')} 
-                       fill 
-                       className="object-cover group-hover:scale-105 transition-transform duration-700"
-                     />
-                   ) : (
-                     <div className="absolute inset-0 bg-slate-200" />
-                   )}
-                </div>
+                 <div className="aspect-[16/10] bg-slate-100 rounded-2xl mb-6 overflow-hidden relative">
+                    {item.image ? (
+                      <img 
+                        src={item.image} 
+                        alt={getStr('title')} 
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-slate-200" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none" />
+                 </div>
 
                 <div className="flex items-center gap-3 mb-4">
                    <Badge variant="secondary" className="bg-teal-50 text-teal-700 border-teal-100 uppercase tracking-tighter">
@@ -104,12 +105,14 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
                    </div>
                 </div>
 
-                <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-teal-600 transition-colors leading-tight">
-                  {getStr('title')}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">
-                  {getStr('excerpt')}
-                </p>
+                <div className="flex-1 flex flex-col">
+                  <h3 className="text-xl font-black text-slate-900 mb-3 group-hover:text-teal-600 transition-colors leading-tight min-h-[3.5rem] line-clamp-2">
+                    {getStr('title')}
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3 flex-1">
+                    {getStr('excerpt')}
+                  </p>
+                </div>
 
                 <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-sm font-bold text-teal-600 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform inline-flex items-center gap-2">

@@ -146,6 +146,43 @@ export async function getNewsArticle(slug: string): Promise<DynamicNewsArticle |
   }
 }
 
+export async function upsertNews(article: Partial<DynamicNewsArticle>, token: string): Promise<DynamicNewsArticle | null> {
+  try {
+    const isUpdate = !!article.id;
+    const url = isUpdate ? `${API_BASE}/news/${article.id}` : `${API_BASE}/news`;
+    
+    // Strip metadata
+    const { createdAt, updatedAt, ...payload } = article as any;
+
+    const res = await fetch(url, {
+      method: isUpdate ? 'PATCH' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteNews(id: string, token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/news/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Curricula ────────────────────────────────────────────────────────────────
 
 export async function getCurriculaList(all = false): Promise<DynamicCurriculum[]> {
@@ -171,6 +208,43 @@ export async function getCurriculum(slug: string): Promise<DynamicCurriculum | n
   }
 }
 
+export async function upsertCurriculum(curriculum: Partial<DynamicCurriculum>, token: string): Promise<DynamicCurriculum | null> {
+  try {
+    const isUpdate = !!curriculum.id;
+    const url = isUpdate ? `${API_BASE}/curricula/${curriculum.id}` : `${API_BASE}/curricula`;
+    
+    // Strip metadata that backend might reject
+    const { createdAt, updatedAt, ...payload } = curriculum as any;
+
+    const res = await fetch(url, {
+      method: isUpdate ? 'PATCH' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteCurriculum(id: string, token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/curricula/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Videos ──────────────────────────────────────────────────────────────────
 
 export async function getVideos(): Promise<DynamicVideo[]> {
@@ -188,7 +262,7 @@ export async function upsertVideo(video: Partial<DynamicVideo>, token: string): 
     const isUpdate = !!video.id;
     const url = isUpdate ? `${API_BASE}/videos/${video.id}` : `${API_BASE}/videos`;
     const res = await fetch(url, {
-      method: isUpdate ? 'PUT' : 'POST',
+      method: isUpdate ? 'PATCH' : 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

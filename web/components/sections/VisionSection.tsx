@@ -45,25 +45,21 @@ export const VisionSection = ({ content = {} }: VisionSectionProps) => {
   let pillars: any[] = [];
   try {
     const raw = content['pillars']?.[locale as 'ar' | 'en'] || content['pillars']?.ar;
-    const parsed = raw ? JSON.parse(raw) : null;
-    const result = Array.isArray(parsed) ? parsed : (parsed ? Object.values(parsed) : []);
-    
-    // If we got a valid non-empty result from DB, use it. Otherwise, use translation.
-    if (result && result.length > 0) {
-      pillars = result;
-    } else {
-      pillars = t('vision.pillars', { returnObjects: true }) as unknown as any[];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed) {
+        pillars = Array.isArray(parsed) ? parsed : Object.values(parsed);
+      }
     }
   } catch (err) {
     console.error("Pillars parse error:", err);
-    pillars = t('vision.pillars', { returnObjects: true }) as unknown as any[];
   }
-  
-  if (!Array.isArray(pillars) || pillars.length === 0) {
-    pillars = t('vision.pillars', { returnObjects: true }) as unknown as any[];
+
+  // Final fallback to translations if DB content is empty or invalid
+  if (!pillars || !Array.isArray(pillars) || pillars.length === 0) {
+    const translated = t('vision.pillars', { returnObjects: true });
+    pillars = Array.isArray(translated) ? translated : (translated ? Object.values(translated) : []);
   }
-  
-  if (!Array.isArray(pillars)) pillars = [];
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
@@ -78,20 +74,23 @@ export const VisionSection = ({ content = {} }: VisionSectionProps) => {
         scrollTrigger: { trigger: '.vision-description', start: 'top 85%' },
       });
 
-      // Pillar cards stagger (highly sensitive trigger)
-      gsap.from('.vision-pillar', {
-        opacity: 0, 
-        y: 20, 
-        scale: 0.98, 
-        duration: 0.5, 
-        stagger: 0.1, 
-        ease: 'power2.out',
-        scrollTrigger: { 
-          trigger: '.vision-pillars-grid', 
-          start: 'top bottom-=50', // Start almost as soon as it appears
-          once: true // Play only once for better reliability
-        },
-      });
+      // Pillar cards stagger - using fromTo to ensure they end up visible
+      gsap.fromTo('.vision-pillar', 
+        { opacity: 0, y: 30 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.8, 
+          stagger: 0.15, 
+          ease: 'back.out(1.7)',
+          scrollTrigger: { 
+            trigger: '.vision-pillars-grid', 
+            start: 'top bottom', // Fire as soon as it enters the screen
+            once: true 
+          },
+          immediateRender: false
+        }
+      );
 
       // CTA button
       gsap.from('.vision-cta', {
@@ -125,9 +124,7 @@ export const VisionSection = ({ content = {} }: VisionSectionProps) => {
             {c('description', t('vision.description'))}
           </p>
 
-          <div className="vision-pillars-grid grid sm:grid-cols-3 gap-8 mb-16 min-h-[200px]">
-            {/* Debug info (hidden) */}
-            <div className="hidden">Count: {pillars.length}</div>
+          <div className="vision-pillars-grid grid sm:grid-cols-3 gap-8 mb-16">
             {Array.isArray(pillars) && pillars.length > 0 ? pillars.map((p, index) => {
               if (!p) return null;
               const iconValue = p.icon || '';
@@ -155,7 +152,9 @@ export const VisionSection = ({ content = {} }: VisionSectionProps) => {
                 </Card>
               );
             }) : (
-              <div className="col-span-full py-12 text-slate-400 italic">No pillars defined.</div>
+              <div className="col-span-full py-12 text-slate-400 italic bg-slate-100 rounded-2xl">
+                {locale === 'ar' ? 'لا يوجد عناصر حالياً' : 'No vision pillars defined yet.'}
+              </div>
             )}
           </div>
 

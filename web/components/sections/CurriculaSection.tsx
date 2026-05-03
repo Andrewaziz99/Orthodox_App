@@ -29,9 +29,11 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
   // Fallback to static if backend didn't provide data
   const dataList = (content && content.length > 0) ? content : staticCurricula;
   
-  // Filter by featured selection
+  // Filter by featured selection and SORT by featuredIds order
   const publishedList = (content && content.length > 0) 
-    ? (dataList as DynamicCurriculum[]).filter(c => c.published && featuredIds.includes(c.id))
+    ? (dataList as DynamicCurriculum[])
+        .filter(c => c.published && featuredIds.includes(c.id))
+        .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id))
     : dataList;
 
   useGSAP(() => {
@@ -71,10 +73,12 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
         </div>
 
         {/* Cards Grid */}
-        <div className="curricula-grid grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="curricula-grid grid sm:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch">
           {publishedList.map((c: any) => {
-            // Determine badge image based on slug
-            const badgeSrc = `/assets/badges/${c.slug === 'bible-characters' ? '4ahed' : c.slug === 'biblical-concepts' ? 'amin' : c.slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
+            // Determine badge image: prioritize uploaded badge URL, fallback to static based on slug
+            const badgeSrc = c.badge && (c.badge.startsWith('http') || c.badge.startsWith('/'))
+              ? c.badge 
+              : `/assets/badges/${c.slug === 'bible-characters' ? '4ahed' : c.slug === 'biblical-concepts' ? 'amin' : c.slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
 
             // Helper to get locale string handling both dynamic and static shapes
             const getStr = (field: string) => {
@@ -92,15 +96,14 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
               >
                 {/* Visual Header with Badge Background */}
                 <div className="relative h-48 bg-slate-900 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-teal-600/20 to-amber-600/20 z-10" />
                   <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity duration-500">
-                    <Image 
+                    <img 
                       src={badgeSrc} 
                       alt={getStr('title')} 
-                      fill 
-                      className="object-contain scale-150 blur-[2px] group-hover:blur-0 transition-all duration-700" 
+                      className={`absolute inset-0 w-full h-full object-contain scale-150 blur-[2px] group-hover:blur-0 transition-all duration-700 ${c.id ? 'opacity-100' : ''}`} 
                     />
                   </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-teal-600/20 to-amber-600/20 pointer-events-none" />
                   
                   {/* Number Overlay */}
                   <div className="absolute top-4 end-6 text-7xl font-black text-white/10 group-hover:text-white/20 transition-colors">
@@ -110,7 +113,7 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
                   {/* Level Badge */}
                   <div className="absolute bottom-4 start-6 z-20">
                      <Badge variant="primary" className="bg-white/10 backdrop-blur-md border-white/20 text-white shadow-none">
-                        {c.badge}
+                        {c.badge && (c.badge.startsWith('http') || c.badge.startsWith('/')) ? (locale === 'ar' ? 'منهج' : 'Curriculum') : c.badge}
                      </Badge>
                   </div>
                 </div>
@@ -122,24 +125,26 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
                      {getStr('ageRange')}
                   </div>
 
-                  <h3 className="text-xl font-black text-slate-900 mb-4 leading-tight group-hover:text-teal-600 transition-colors">
-                    {getStr('title')}
-                  </h3>
+                  <div className="flex-1 flex flex-col">
+                    <h3 className="text-xl font-black text-slate-900 mb-4 leading-tight group-hover:text-teal-600 transition-colors min-h-[3rem] line-clamp-2">
+                      {getStr('title')}
+                    </h3>
 
-                  <div className="space-y-3 mb-6 flex-1">
-                    <div className="flex items-center gap-2.5 text-sm text-slate-500 font-bold">
-                       <Clock className="w-4 h-4 text-amber-500" />
-                       <span>{getStr('duration')}</span>
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center gap-2.5 text-sm text-slate-500 font-bold">
+                         <Clock className="w-4 h-4 text-amber-500" />
+                         <span>{getStr('duration')}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-sm text-slate-500 font-bold">
+                         <Users className="w-4 h-4 text-teal-500" />
+                         <span>{getStr('audience')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2.5 text-sm text-slate-500 font-bold">
-                       <Users className="w-4 h-4 text-teal-500" />
-                       <span>{getStr('audience')}</span>
-                    </div>
+
+                    <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3 flex-1">
+                      {getStr('description')}
+                    </p>
                   </div>
-
-                  <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3">
-                    {getStr('description')}
-                  </p>
 
                   <div
                     className="inline-flex items-center gap-2 text-sm font-black text-slate-900 group/link mt-auto"

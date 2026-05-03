@@ -3,7 +3,44 @@
 import React, { useState } from 'react';
 import { useLang } from '@/components/providers/LanguageProvider';
 import { Card, Button } from '@/components/ui';
-import { LayoutDashboard, Newspaper, GraduationCap, LayoutTemplate, Save, Image as ImageIcon, Play, Plus, Trash2, Video, Upload } from 'lucide-react';
+import { 
+  Plus, 
+  Save, 
+  Trash2, 
+  Image as ImageIcon, 
+  Play, 
+  Video, 
+  ArrowLeft, 
+  ArrowRight, 
+  Settings, 
+  Layout, 
+  FileText, 
+  Users, 
+  Database,
+  GripVertical,
+  GraduationCap,
+  Newspaper,
+  LayoutDashboard,
+  LayoutTemplate,
+  Upload
+} from 'lucide-react';
+import {
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { 
   bulkUpsertSection, 
@@ -14,6 +51,10 @@ import {
   DynamicVideo, 
   getNewsArticles, 
   getCurriculaList, 
+  upsertNews,
+  deleteNews,
+  upsertCurriculum,
+  deleteCurriculum,
   DynamicNewsArticle, 
   DynamicCurriculum 
 } from '@/lib/api/content';
@@ -22,18 +63,31 @@ import { getToken } from '@/lib/auth/session';
 export default function ContentAdminPage() {
   const { t, locale, dir } = useLang();
   const [activeSection, setActiveSection] = useState<string>('hero');
-
-  // Hardcoded list of customizable sections on the home page
-  const sections = [
+  
+  // Sections specifically for the Home Page
+  const homeSections = [
     { id: 'hero', label: 'Hero Section' },
     { id: 'about', label: 'About Us' },
     { id: 'audience', label: 'Audience' },
-    { id: 'curricula', label: 'Curricula' },
-    { id: 'news', label: 'News Articles' },
-    { id: 'app', label: 'App Section' },
-    { id: 'videos', label: 'Videos' },
-    { id: 'vision', label: 'Vision' },
-    { id: 'cta', label: 'Call to Action' },
+    { id: 'app', label: 'Mobile App' },
+    { id: 'curricula_home', label: 'Curricula' },
+    { id: 'news_home', label: 'News' },
+    { id: 'videos', label: 'Video Gallery' },
+    { id: 'vision', label: 'Future Vision' },
+    { id: 'cta', label: 'Bottom CTA' },
+  ];
+
+  // Sections for other main pages
+  const internalPages = [
+    { id: 'about', label: 'About Page Details' },
+    { id: 'app', label: 'App Page Details' },
+    { id: 'vision', label: 'Vision Page Details' },
+  ];
+
+  // Inventory (CRUD) managers
+  const inventory = [
+    { id: 'curricula_inventory', label: 'Curricula Library', icon: <GraduationCap className="w-4 h-4" /> },
+    { id: 'news_inventory', label: 'News Articles', icon: <Newspaper className="w-4 h-4" /> },
   ];
 
   return (
@@ -48,32 +102,77 @@ export default function ContentAdminPage() {
       {/* Navigation & Content Area */}
       <div className="grid md:grid-cols-4 gap-8">
         {/* Sidebar */}
-        <Card className="col-span-1 p-4 shadow-sm h-fit sticky top-24">
-          <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
-            <LayoutTemplate className="w-4 h-4" />
-            Home Page
-          </h3>
-          <div className="space-y-1">
-            {sections.map(s => (
-              <button
-                key={s.id}
-                onClick={() => setActiveSection(s.id)}
-                className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </Card>
+        <div className="col-span-1 space-y-6 sticky top-24 h-fit">
+          <Card className="p-4 shadow-sm">
+            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
+              <LayoutTemplate className="w-4 h-4" />
+              Home Page
+            </h3>
+            <div className="space-y-1">
+              {homeSections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveSection(s.id)}
+                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 shadow-sm">
+            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
+              <LayoutDashboard className="w-4 h-4" />
+              Inventory
+            </h3>
+            <div className="space-y-1">
+              {inventory.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveSection(s.id)}
+                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  <span className="flex items-center gap-2">
+                    {s.icon}
+                    {s.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4 shadow-sm">
+            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
+              <LayoutTemplate className="w-4 h-4" />
+              Internal Pages
+            </h3>
+            <div className="space-y-1">
+              {internalPages.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveSection(s.id)}
+                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+        </div>
 
         {/* Editor Area */}
         <div className="col-span-3">
            {activeSection === 'videos' ? (
              <VideoManager />
-           ) : activeSection === 'curricula' ? (
+           ) : activeSection === 'curricula_home' ? (
              <CurriculaHomeManager />
-           ) : activeSection === 'news' ? (
+           ) : activeSection === 'news_home' ? (
              <NewsHomeManager />
+           ) : activeSection === 'curricula_inventory' ? (
+             <CurriculaInventoryManager />
+           ) : activeSection === 'news_inventory' ? (
+             <NewsInventoryManager />
            ) : (
              <SectionEditor sectionId={activeSection} />
            )}
@@ -100,9 +199,13 @@ function SectionEditor({ sectionId }: { sectionId: string }) {
       Object.keys(content).forEach(key => {
         let fieldType = content[key].type || 'text';
         
-        const jsonKeys = ['stats', 'features', 'churches', 'servants', 'children', 'items', 'pillars', 'formLabels'];
+        const jsonKeys = [
+          'stats', 'features', 'churches', 'servants', 'children', 
+          'items', 'pillars', 'formLabels', 'milestones', 'socialLinks'
+        ];
         if (jsonKeys.includes(key)) fieldType = 'json';
         else if (key.toLowerCase().includes('image')) fieldType = 'image';
+        else if (key.toLowerCase().includes('description') || key.toLowerCase().includes('subtitle') || key.toLowerCase().includes('body')) fieldType = 'textarea';
 
         initialEdits[key] = {
           ar: content[key].ar || '',
@@ -161,7 +264,7 @@ function SectionEditor({ sectionId }: { sectionId: string }) {
       </div>
 
       <div className="space-y-8">
-        {keys.map(key => {
+        {keys.filter(key => !(sectionId === 'app' && key.toLowerCase().includes('image'))).map(key => {
           const field = edits[key];
           return (
             <div key={key} className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
@@ -356,6 +459,39 @@ function DynamicJsonEditor({
          <span className="text-xs font-bold text-slate-400 uppercase">English</span>
        </div>
        {renderNode(dataAr, dataEn, [])}
+    </div>
+  );
+}
+
+// ─── Sortable Item Component ─────────────────────────────────────────────
+
+function SortableItem({ id, children }: { id: string, children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div 
+        {...attributes} 
+        {...listeners} 
+        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity z-10"
+      >
+        <GripVertical className="w-4 h-4 text-slate-400" />
+      </div>
+      {children}
     </div>
   );
 }
@@ -584,10 +720,11 @@ function CurriculaHomeManager() {
     getCurriculaList(true).then(setAllCurricula);
   }, []);
 
-  const featuredIds = React.useMemo(() => {
+  const featuredIds = React.useMemo<string[]>(() => {
     try {
       const val = content['featuredIds']?.en || '[]';
-      return Array.isArray(JSON.parse(val)) ? JSON.parse(val) : [];
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? (parsed as string[]) : [];
     } catch (e) {
       return [];
     }
@@ -612,6 +749,27 @@ function CurriculaHomeManager() {
         [key]: { ...current, [locale]: value, type: 'text' }
       };
     });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = featuredIds.indexOf(active.id as string);
+      const newIndex = featuredIds.indexOf(over.id as string);
+      const newIds = arrayMove(featuredIds, oldIndex, newIndex);
+      
+      setContent(prev => ({
+        ...prev,
+        featuredIds: { ar: JSON.stringify(newIds), en: JSON.stringify(newIds), type: 'json' }
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -677,23 +835,69 @@ function CurriculaHomeManager() {
       </Card>
 
       <Card className="p-8">
-        <h3 className="text-xl font-black text-slate-900 mb-6">Select Curricula for Home Page</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          {allCurricula.map(c => (
-            <div 
-              key={c.id} 
-              onClick={() => toggleId(c.id)}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${featuredIds.includes(c.id) ? 'border-teal-500 bg-teal-50/50' : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'}`}
-            >
-              <div>
-                <p className="font-bold text-slate-800">{c.titleEn}</p>
-                <p className="text-sm text-slate-500">{c.titleAr}</p>
-              </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${featuredIds.includes(c.id) ? 'bg-teal-500 border-teal-500' : 'border-slate-300'}`}>
-                {featuredIds.includes(c.id) && <Save className="w-3 h-3 text-white" />}
-              </div>
+        <h3 className="text-xl font-black text-slate-900 mb-2">Home Page Selection</h3>
+        <p className="text-slate-500 text-sm mb-6">Drag to reorder selected items. Click to add/remove.</p>
+        
+        <div className="space-y-6">
+          {/* Selected Items (Sortable) */}
+          {featuredIds.length > 0 && (
+            <div className="p-6 bg-teal-50/30 rounded-[2rem] border-2 border-dashed border-teal-100">
+              <h4 className="text-xs font-black text-teal-700 uppercase mb-4 px-2">Active on Home Page (Drag to Reorder)</h4>
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={featuredIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    {featuredIds.map((id: string) => {
+                      const item = allCurricula.find(curr => curr.id === id);
+                      if (!item) return null;
+                      return (
+                        <SortableItem key={id} id={id}>
+                          <div 
+                            onClick={() => toggleId(id)}
+                            className="p-4 pl-10 rounded-2xl border-2 border-teal-500 bg-white shadow-sm transition-all cursor-pointer flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{item.titleEn}</p>
+                              <p className="text-sm text-slate-500">{item.titleAr}</p>
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center">
+                              <Save className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        </SortableItem>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
-          ))}
+          )}
+
+          {/* Available Items */}
+          <div>
+            <h4 className="text-xs font-black text-slate-400 uppercase mb-4 px-2">Available Curricula</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              {allCurricula.filter(curr => !featuredIds.includes(curr.id)).map(n => (
+                <div 
+                  key={n.id} 
+                  onClick={() => toggleId(n.id)}
+                  className="p-4 rounded-2xl border-2 border-slate-100 hover:border-slate-200 bg-slate-50/30 transition-all cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-bold text-slate-800">{n.titleEn}</p>
+                    <p className="text-sm text-slate-500">{n.titleAr}</p>
+                  </div>
+                  <div className="w-6 h-6 rounded-full border-2 border-slate-300" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </Card>
     </div>
@@ -711,10 +915,11 @@ function NewsHomeManager() {
     getNewsArticles(true).then(setAllNews);
   }, []);
 
-  const featuredIds = React.useMemo(() => {
+  const featuredIds = React.useMemo<string[]>(() => {
     try {
       const val = content['featuredIds']?.en || '[]';
-      return Array.isArray(JSON.parse(val)) ? JSON.parse(val) : [];
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? (parsed as string[]) : [];
     } catch (e) {
       return [];
     }
@@ -739,6 +944,27 @@ function NewsHomeManager() {
         [key]: { ...current, [locale]: value, type: 'text' }
       };
     });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = featuredIds.indexOf(active.id as string);
+      const newIndex = featuredIds.indexOf(over.id as string);
+      const newIds = arrayMove(featuredIds, oldIndex, newIndex);
+      
+      setContent(prev => ({
+        ...prev,
+        featuredIds: { ar: JSON.stringify(newIds), en: JSON.stringify(newIds), type: 'json' }
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -798,25 +1024,635 @@ function NewsHomeManager() {
       </Card>
 
       <Card className="p-8">
-        <h3 className="text-xl font-black text-slate-900 mb-6">Select Featured Articles</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          {allNews.map(n => (
-            <div 
-              key={n.id} 
-              onClick={() => toggleId(n.id)}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${featuredIds.includes(n.id) ? 'border-teal-500 bg-teal-50/50' : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'}`}
-            >
-              <div>
-                <p className="font-bold text-slate-800">{n.titleEn}</p>
-                <p className="text-sm text-slate-500">{n.titleAr}</p>
-              </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${featuredIds.includes(n.id) ? 'bg-teal-500 border-teal-500' : 'border-slate-300'}`}>
-                {featuredIds.includes(n.id) && <Save className="w-3 h-3 text-white" />}
-              </div>
+        <h3 className="text-xl font-black text-slate-900 mb-2">Featured Articles Selection</h3>
+        <p className="text-slate-500 text-sm mb-6">Drag to reorder selected articles. Click to add/remove.</p>
+        
+        <div className="space-y-6">
+          {/* Selected Items (Sortable) */}
+          {featuredIds.length > 0 && (
+            <div className="p-6 bg-teal-50/30 rounded-[2rem] border-2 border-dashed border-teal-100">
+              <h4 className="text-xs font-black text-teal-700 uppercase mb-4 px-2">Active on Home Page (Drag to Reorder)</h4>
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={featuredIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    {featuredIds.map((id: string) => {
+                      const item = allNews.find(n => n.id === id);
+                      if (!item) return null;
+                      return (
+                        <SortableItem key={id} id={id}>
+                          <div 
+                            onClick={() => toggleId(id)}
+                            className="p-4 pl-10 rounded-2xl border-2 border-teal-500 bg-white shadow-sm transition-all cursor-pointer flex items-center justify-between"
+                          >
+                            <div>
+                              <p className="font-bold text-slate-800">{item.titleEn}</p>
+                              <p className="text-sm text-slate-500">{item.titleAr}</p>
+                            </div>
+                            <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center">
+                              <Save className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        </SortableItem>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
-          ))}
+          )}
+
+          {/* Available Items */}
+          <div>
+            <h4 className="text-xs font-black text-slate-400 uppercase mb-4 px-2">Available Articles</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              {allNews.filter(n => !featuredIds.includes(n.id)).map(n => (
+                <div 
+                  key={n.id} 
+                  onClick={() => toggleId(n.id)}
+                  className="p-4 rounded-2xl border-2 border-slate-100 hover:border-slate-200 bg-slate-50/30 transition-all cursor-pointer flex items-center justify-between"
+                >
+                  <div>
+                    <p className="font-bold text-slate-800">{n.titleEn}</p>
+                    <p className="text-sm text-slate-500">{n.titleAr}</p>
+                  </div>
+                  <div className="w-6 h-6 rounded-full border-2 border-slate-300" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </Card>
+    </div>
+  );
+}
+
+// ─── Curricula Inventory Manager ─────────────────────────────────────────────
+
+function CurriculaInventoryManager() {
+  const [curricula, setCurricula] = useState<DynamicCurriculum[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<DynamicCurriculum> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingBadge, setUploadingBadge] = useState(false);
+
+  const fetchCurricula = async () => {
+    setLoading(true);
+    const data = await getCurriculaList(true); // Get all including drafts
+    setCurricula(data);
+    setLoading(false);
+  };
+
+  React.useEffect(() => {
+    fetchCurricula();
+  }, []);
+
+  const handleSave = async () => {
+    if (!editing) return;
+    
+    // Basic validation
+    if (!editing.titleEn || !editing.titleAr || !editing.slug) {
+      alert('Please fill in both titles and the slug.');
+      return;
+    }
+
+    setSaving(true);
+    const token = getToken() || '';
+    const success = await upsertCurriculum(editing as DynamicCurriculum, token);
+    setSaving(false);
+    if (success) {
+      setEditing(null);
+      fetchCurricula();
+    } else {
+      alert('Failed to save curriculum. Please ensure all fields are filled.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this curriculum?')) return;
+    const token = getToken() || '';
+    const success = await deleteCurriculum(id, token);
+    if (success) fetchCurricula();
+        else alert('Failed to delete.');
+  };
+
+  const handleBadgeUpload = async (file: File) => {
+    setUploadingBadge(true);
+    const token = getToken() || '';
+    const url = await uploadImage(file, token);
+    setUploadingBadge(false);
+    if (url && editing) {
+      setEditing({ ...editing, badge: url });
+    }
+  };
+
+  const generateSlug = (title: string) => {
+    return title.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+  };
+
+  if (loading) return <div className="animate-pulse h-64 bg-slate-100 rounded-2xl w-full" />;
+
+  return (
+    <div className="space-y-6">
+        {editing ? (
+          <Card className="p-8 shadow-lg border-2 border-indigo-100">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-slate-900">{editing.id ? 'Edit Curriculum' : 'Add New Curriculum'}</h2>
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Curriculum'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8">
+              {/* Left Side: General Info */}
+              <div className="space-y-6">
+                 <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Badge / Icon</label>
+                  <div className="flex items-center gap-4">
+                     {editing.badge && (
+                       <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-slate-100 bg-slate-50 p-2">
+                          {(() => {
+                            const isUrl = editing.badge && (editing.badge.startsWith('http') || editing.badge.startsWith('/'));
+                            const badgeSrc = isUrl 
+                              ? editing.badge 
+                              : `/assets/badges/${editing.slug === 'bible-characters' ? '4ahed' : editing.slug === 'biblical-concepts' ? 'amin' : editing.slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
+                            return <img src={badgeSrc} alt="Badge" className="w-full h-full object-contain" />;
+                          })()}
+                       </div>
+                     )}
+                     <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                        <Upload className="w-4 h-4 text-slate-400" />
+                        {uploadingBadge ? 'Uploading...' : 'Upload Badge'}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleBadgeUpload(e.target.files[0])} />
+                     </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">English Title (Generates Slug)</label>
+                    <input
+                      type="text"
+                      value={editing.titleEn || ''}
+                      onChange={e => {
+                        const title = e.target.value;
+                        setEditing(prev => prev ? ({ 
+                          ...prev, 
+                          titleEn: title, 
+                          slug: prev.id ? prev.slug : generateSlug(title) 
+                        }) : null);
+                      }}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Arabic Title</label>
+                    <input
+                      type="text"
+                      value={editing.titleAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, titleAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 font-bold"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">URL Slug</label>
+                    <input
+                      type="text"
+                      value={editing.slug || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, slug: e.target.value }) : null)}
+                      className="w-full bg-slate-100 border-slate-200 rounded-xl p-3 font-mono text-sm text-indigo-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Curriculum Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 01"
+                      value={editing.number || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, number: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Audience (En)</label>
+                    <input
+                      type="text"
+                      value={editing.audienceEn || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, audienceEn: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Audience (Ar)</label>
+                    <input
+                      type="text"
+                      value={editing.audienceAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, audienceAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Age Range (En)</label>
+                    <input
+                      type="text"
+                      value={editing.ageRangeEn || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, ageRangeEn: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Age Range (Ar)</label>
+                    <input
+                      type="text"
+                      value={editing.ageRangeAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, ageRangeAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Duration (En)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 12 Weeks"
+                      value={editing.durationEn || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, durationEn: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Duration (Ar)</label>
+                    <input
+                      type="text"
+                      placeholder="مثلاً: 12 أسبوع"
+                      value={editing.durationAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, durationAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                   <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={editing.published} 
+                        onChange={e => setEditing(prev => prev ? ({ ...prev, published: e.target.checked }) : null)}
+                        className="w-5 h-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      <span className="font-bold text-slate-700">Published</span>
+                   </label>
+                   <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-400 uppercase">Order</span>
+                      <input 
+                        type="number" 
+                        value={editing.order || 0} 
+                        onChange={e => setEditing(prev => prev ? ({ ...prev, order: parseInt(e.target.value) }) : null)}
+                        className="w-20 bg-white border-slate-200 rounded-lg p-2 font-bold"
+                      />
+                   </div>
+                </div>
+              </div>
+
+              {/* Right Side: Descriptions & Full Content */}
+              <div className="space-y-6">
+                 <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Short Description (Ar)</label>
+                    <textarea
+                      value={editing.descriptionAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, descriptionAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-24"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Short Description (En)</label>
+                    <textarea
+                      value={editing.descriptionEn || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, descriptionEn: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-24"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Syllabus / Content (Ar)</label>
+                    <textarea
+                      value={editing.fullContentAr || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, fullContentAr: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-48 font-mono text-sm"
+                      dir="rtl"
+                      placeholder="Supports HTML or plain text..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Syllabus / Content (En)</label>
+                    <textarea
+                      value={editing.fullContentEn || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, fullContentEn: e.target.value }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-48 font-mono text-sm"
+                      placeholder="Supports HTML or plain text..."
+                    />
+                  </div>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+             <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-slate-900">Curricula Library</h2>
+                <Button onClick={() => setEditing({ 
+                  id: '', // Empty ID for new item
+                  published: true, 
+                  order: 0,
+                  titleAr: '',
+                  titleEn: '',
+                  slug: '',
+                  number: '',
+                  badge: '',
+                  durationAr: '',
+                  durationEn: '',
+                  audienceAr: '',
+                  audienceEn: '',
+                  descriptionAr: '',
+                  descriptionEn: '',
+                  ageRangeAr: '',
+                  ageRangeEn: '',
+                  fullContentAr: '',
+                  fullContentEn: ''
+                })}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add New Curriculum
+                </Button>
+             </div>
+
+             <div className="grid gap-4">
+                {curricula.map(cur => (
+                  <Card key={cur.id} className="p-4 flex items-center justify-between hover:border-indigo-200 transition group shadow-sm">
+                     <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-lg bg-slate-100 p-2 flex items-center justify-center border border-slate-200">
+                            {(() => {
+                              const isUrl = cur.badge && (cur.badge.startsWith('http') || cur.badge.startsWith('/'));
+                              const badgeSrc = isUrl 
+                                ? cur.badge 
+                                : `/assets/badges/${cur.slug === 'bible-characters' ? '4ahed' : cur.slug === 'biblical-concepts' ? 'amin' : cur.slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
+                              return <img src={badgeSrc} alt="" className="w-full h-full object-contain" />;
+                            })()}
+                         </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900">{cur.titleEn} / {cur.titleAr}</h4>
+                          <div className="flex items-center gap-3 text-xs font-bold text-slate-400">
+                             <span className="text-indigo-600 font-mono">/{cur.slug}</span>
+                             <span>•</span>
+                             <span className={cur.published ? 'text-teal-600' : 'text-amber-600'}>
+                               {cur.published ? 'Published' : 'Draft'}
+                             </span>
+                             <span>•</span>
+                             <span>Order: {cur.order}</span>
+                          </div>
+                        </div>
+                     </div>
+                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="outline" size="sm" onClick={() => setEditing(cur)}>Edit</Button>
+                        <Button variant="outline" size="sm" className="text-rose-600 border-rose-100 hover:bg-rose-50" onClick={() => handleDelete(cur.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                     </div>
+                  </Card>
+                ))}
+             </div>
+          </div>
+        )}
+      </div>
+    );
+}
+
+function NewsInventoryManager() {
+  const [articles, setArticles] = useState<DynamicNewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<DynamicNewsArticle> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const fetchNews = async () => {
+    setLoading(true);
+    const data = await getNewsArticles(true);
+    setArticles(data);
+    setLoading(false);
+  };
+
+  React.useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const handleSave = async () => {
+    if (!editing) return;
+
+    // Basic validation
+    if (!editing.titleEn || !editing.titleAr || !editing.slug || !editing.categoryEn) {
+      alert('Please fill in both titles, the slug, and a category.');
+      return;
+    }
+
+    setSaving(true);
+    const token = getToken() || '';
+    const success = await upsertNews(editing as DynamicNewsArticle, token);
+    setSaving(false);
+    if (success) {
+      setEditing(null);
+      fetchNews();
+    } else {
+      alert('Failed to save article. Please ensure all fields are filled.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure?')) return;
+    const token = getToken() || '';
+    const success = await deleteNews(id, token);
+    if (success) fetchNews();
+    else alert('Failed to delete.');
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    const token = getToken() || '';
+    const url = await uploadImage(file, token);
+    setUploadingImage(false);
+    if (url && editing) setEditing({ ...editing, image: url });
+  };
+
+  const generateSlug = (title: string) => title.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
+  if (loading) return <div className="animate-pulse h-64 bg-slate-100 rounded-2xl w-full" />;
+
+  return (
+    <div className="space-y-6">
+        {editing ? (
+          <Card className="p-8 shadow-lg border-2 border-indigo-100">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-slate-900">{editing.id ? 'Edit Article' : 'New Article'}</h2>
+              <div className="flex gap-4">
+                <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
+                <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Article'}</Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Cover Image</label>
+                  <div className="flex items-center gap-4">
+                    {editing.image && (
+                      <div className="w-24 h-24 rounded-xl overflow-hidden border border-slate-200">
+                        <img src={editing.image} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                      <Upload className="w-4 h-4 text-slate-400" />
+                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                      <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Title (En)</label>
+                    <input type="text" value={editing.titleEn || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, titleEn: e.target.value, slug: prev.id ? prev.slug : generateSlug(e.target.value) }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Title (Ar)</label>
+                    <input type="text" value={editing.titleAr || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, titleAr: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" dir="rtl" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Slug</label>
+                  <input type="text" value={editing.slug || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, slug: e.target.value }) : null)} className="w-full bg-slate-100 border-slate-200 rounded-xl p-3 font-mono text-sm text-indigo-600" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Category (En)</label>
+                    <input type="text" value={editing.categoryEn || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, categoryEn: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Category (Ar)</label>
+                    <input type="text" value={editing.categoryAr || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, categoryAr: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" dir="rtl" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Date</label>
+                    <input type="text" value={editing.date || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, date: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" placeholder="e.g. March 2025" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Order</label>
+                    <input type="number" value={editing.order || 0} onChange={e => setEditing(prev => prev ? ({ ...prev, order: parseInt(e.target.value) }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Excerpt (En)</label>
+                    <textarea value={editing.excerptEn || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, excerptEn: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-20" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Excerpt (Ar)</label>
+                    <textarea value={editing.excerptAr || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, excerptAr: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-20" dir="rtl" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Body Content (En)</label>
+                  <textarea value={editing.bodyEn || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, bodyEn: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-48" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Body Content (Ar)</label>
+                  <textarea value={editing.bodyAr || ''} onChange={e => setEditing(prev => prev ? ({ ...prev, bodyAr: e.target.value }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 h-48" dir="rtl" />
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : (
+         <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-black text-slate-900">News Articles</h2>
+              <Button onClick={() => setEditing({ 
+                id: '', // Empty ID for new item
+                published: true, 
+                order: 0,
+                titleAr: '',
+                titleEn: '',
+                slug: '',
+                excerptAr: '',
+                excerptEn: '',
+                bodyAr: '',
+                bodyEn: '',
+                categoryAr: '',
+                categoryEn: '',
+                date: '',
+                image: ''
+              })}>
+                <Plus className="w-5 h-5 mr-2" />
+                Write New Article
+              </Button>
+            </div>
+
+            <div className="grid gap-4">
+               {articles.map(art => (
+                 <Card key={art.id} className="p-4 flex items-center justify-between hover:border-indigo-200 transition group shadow-sm">
+                    <div className="flex items-center gap-4">
+                       <div className="w-16 h-12 rounded-lg bg-slate-100 overflow-hidden border border-slate-200">
+                          {art.image && <img src={art.image} alt="" className="w-full h-full object-cover" />}
+                       </div>
+                       <div>
+                         <h4 className="font-bold text-slate-900">{art.titleEn}</h4>
+                         <div className="flex items-center gap-3 text-xs font-bold text-slate-400">
+                           <span className="text-indigo-600 font-mono">/{art.slug}</span>
+                           <span>•</span>
+                           <span>{art.date}</span>
+                         </div>
+                       </div>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="outline" size="sm" onClick={() => setEditing(art)}>Edit</Button>
+                      <Button variant="outline" size="sm" className="text-rose-600 border-rose-100 hover:bg-rose-50" onClick={() => handleDelete(art.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                 </Card>
+               ))}
+            </div>
+         </div>
+       )}
     </div>
   );
 }

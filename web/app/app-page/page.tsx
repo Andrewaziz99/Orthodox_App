@@ -5,42 +5,68 @@ import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { Smartphone, Download, Star, Zap, Shield, BookOpen } from 'lucide-react';
 
+import { useSiteContent } from '@/hooks/useSiteContent';
+import { pick } from '@/lib/api/content';
+
 export default function AppPage() {
   const { t, locale } = useLang();
+  const { content, loading } = useSiteContent('app_page');
 
   const breadcrumbs = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.app'), href: '/app-page' }
   ];
 
-  const features = [
+  const get = (key: string, fallbackKey?: string, defaultVal: string = '') => {
+    return pick(content, key, locale) || (fallbackKey ? t(fallbackKey) : defaultVal);
+  };
+
+  const defaultFeatures = [
     {
-      icon: BookOpen,
-      title: locale === 'ar' ? 'محتوى كتابي شامل' : 'Comprehensive Biblical Content',
-      description: locale === 'ar' ? 'جميع المناهج والمواد التعليمية في مكان واحد' : 'All curricula and educational materials in one place',
+      icon: 'BookOpen',
+      titleAr: 'محتوى كتابي شامل',
+      titleEn: 'Comprehensive Biblical Content',
+      descriptionAr: 'جميع المناهج والمواد التعليمية في مكان واحد',
+      descriptionEn: 'All curricula and educational materials in one place',
     },
     {
-      icon: Zap,
-      title: locale === 'ar' ? 'سريع وسهل الاستخدام' : 'Fast & Easy to Use',
-      description: locale === 'ar' ? 'واجهة بسيطة وسلسة مصممة للأطفال والمعلمين' : 'Simple and smooth interface designed for children and teachers',
+      icon: 'Zap',
+      titleAr: 'سريع وسهل الاستخدام',
+      titleEn: 'Fast & Easy to Use',
+      descriptionAr: 'واجهة بسيطة وسلسة مصممة للأطفال والمعلمين',
+      descriptionEn: 'Simple and smooth interface designed for children and teachers',
     },
     {
-      icon: Shield,
-      title: locale === 'ar' ? 'آمن للأطفال' : 'Safe for Children',
-      description: locale === 'ar' ? 'بيئة آمنة ومحمية لتصفح المحتوى الكتابي' : 'Safe and protected environment for browsing biblical content',
+      icon: 'Shield',
+      titleAr: 'آمن للأطفال',
+      titleEn: 'Safe for Children',
+      descriptionAr: 'بيئة آمنة ومحمية لتصفح المحتوى الكتابي',
+      descriptionEn: 'Safe and protected environment for browsing biblical content',
     },
     {
-      icon: Star,
-      title: locale === 'ar' ? 'تحديثات مستمرة' : 'Regular Updates',
-      description: locale === 'ar' ? 'محتوى جديد ومحدث بشكل دوري' : 'New and regularly updated content',
+      icon: 'Star',
+      titleAr: 'تحديثات مستمرة',
+      titleEn: 'Regular Updates',
+      descriptionAr: 'محتوى جديد ومحدث بشكل دوري',
+      descriptionEn: 'New and regularly updated content',
     },
   ];
+
+  let featuresData = defaultFeatures;
+  try {
+    const rawFeatures = content['features']?.[locale];
+    if (rawFeatures) featuresData = JSON.parse(rawFeatures);
+  } catch (e) {}
+
+  const iconMap: any = { BookOpen, Zap, Shield, Star, Smartphone, Download };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <>
       <PageHero 
-        title={t('app.heading')} 
-        subtitle={t('app.description', ' ')}
+        title={get('heading', 'app.heading')} 
+        subtitle={get('description', 'app.description')}
         breadcrumbs={breadcrumbs} 
       />
 
@@ -54,12 +80,12 @@ export default function AppPage() {
               <Smartphone className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-6 leading-tight">
-              {locale === 'ar' ? 'حمّل تطبيقنا اليوم' : 'Download Our App Today'}
+              {get('downloadHeading', undefined, locale === 'ar' ? 'حمّل تطبيقنا اليوم' : 'Download Our App Today')}
             </h2>
             <p className="text-xl text-slate-600 leading-relaxed">
-              {locale === 'ar' 
+              {get('downloadSubheading', undefined, locale === 'ar' 
                 ? 'احصل على وصول كامل لجميع المناهج والمحتوى التعليمي من جهازك المحمول'
-                : 'Get full access to all curricula and educational content from your mobile device'}
+                : 'Get full access to all curricula and educational content from your mobile device')}
             </p>
           </div>
 
@@ -88,18 +114,20 @@ export default function AppPage() {
         <div className="container-max">
           <div className="text-center mb-16">
             <span className="inline-block text-xs font-black text-teal-600 uppercase tracking-[0.3em] mb-4">
-              {locale === 'ar' ? 'مميزات التطبيق' : 'App Features'}
+              {get('featuresEyebrow', undefined, locale === 'ar' ? 'مميزات التطبيق' : 'App Features')}
             </span>
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
-              {locale === 'ar' ? 'لماذا تطبيقنا؟' : 'Why Our App?'}
+              {get('featuresHeading', undefined, locale === 'ar' ? 'لماذا تطبيقنا؟' : 'Why Our App?')}
             </h2>
             <div className="h-1 w-16 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full mx-auto" />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
-            {features.map((feature, idx) => {
-              const Icon = feature.icon;
+            {featuresData.map((feature: any, idx: number) => {
+              const Icon = iconMap[feature.icon] || BookOpen;
               const isAlt = idx % 2 !== 0;
+              const title = locale === 'ar' ? feature.titleAr : feature.titleEn;
+              const description = locale === 'ar' ? feature.descriptionAr : feature.descriptionEn;
               return (
                 <div 
                   key={idx}
@@ -109,10 +137,10 @@ export default function AppPage() {
                     <Icon className="w-6 h-6" />
                   </div>
                   <h3 className="text-xl font-black text-slate-900 mb-3 leading-tight">
-                    {feature.title}
+                    {title}
                   </h3>
                   <p className="text-slate-600 leading-relaxed">
-                    {feature.description}
+                    {description}
                   </p>
                 </div>
               );
