@@ -6,12 +6,14 @@ import Image from 'next/image';
 import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { Clock, Users, ArrowRight, ArrowLeft } from 'lucide-react';
-import { getCurriculaList, DynamicCurriculum } from '@/lib/api/content';
+import { getCurriculaList, DynamicCurriculum, pick } from '@/lib/api/content';
+import { useSiteContent } from '@/hooks/useSiteContent';
 
 export default function CurriculaPage() {
   const { t, dir, locale } = useLang();
   const [curriculaList, setCurriculaList] = React.useState<DynamicCurriculum[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const { content, loading: contentLoading } = useSiteContent('curricula_page');
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
 
   React.useEffect(() => {
@@ -26,13 +28,17 @@ export default function CurriculaPage() {
     { label: t('nav.curricula'), href: '/curricula' }
   ];
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
+  const get = (key: string, fallbackKey?: string, defaultVal: string = '') => {
+    return pick(content, key, locale) || (fallbackKey ? t(fallbackKey) : defaultVal);
+  };
+
+  if (loading || contentLoading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <>
       <PageHero 
-        title={t('curricula.heading')} 
-        subtitle={t('curricula.subheading', ' ')}
+        title={get('heading', 'curricula.heading')} 
+        subtitle={get('subheading', undefined, locale === 'ar' ? 'مسار متدرج من المناهج الكتابية المصممة بعناية لتناسب المراحل العمرية المختلفة' : 'A progressive path of carefully designed biblical curricula to suit different age groups')}
         breadcrumbs={breadcrumbs} 
       />
 

@@ -124,7 +124,8 @@ export default function AppPage() {
 
           <div className="grid sm:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
             {featuresData.map((feature: any, idx: number) => {
-              const Icon = iconMap[feature.icon] || BookOpen;
+              const isUrl = feature.icon && (feature.icon.startsWith('http') || feature.icon.startsWith('/'));
+              const Icon = !isUrl ? (iconMap[feature.icon] || BookOpen) : null;
               const isAlt = idx % 2 !== 0;
               const title = locale === 'ar' ? feature.titleAr : feature.titleEn;
               const description = locale === 'ar' ? feature.descriptionAr : feature.descriptionEn;
@@ -133,8 +134,12 @@ export default function AppPage() {
                   key={idx}
                   className="group bg-white rounded-2xl p-8 border border-slate-100 hover:border-teal-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-400"
                 >
-                  <div className={`w-13 h-13 w-[52px] h-[52px] rounded-2xl flex items-center justify-center mb-6 ${isAlt ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-teal-50 text-teal-600 border border-teal-100'}`}>
-                    <Icon className="w-6 h-6" />
+                  <div className={`w-13 h-13 w-[52px] h-[52px] rounded-2xl flex items-center justify-center mb-6 overflow-hidden ${isAlt ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-teal-50 text-teal-600 border border-teal-100'}`}>
+                    {isUrl ? (
+                      <img src={feature.icon} alt="" className="w-8 h-8 object-contain" />
+                    ) : (
+                      Icon && <Icon className="w-6 h-6" />
+                    )}
                   </div>
                   <h3 className="text-xl font-black text-slate-900 mb-3 leading-tight">
                     {title}

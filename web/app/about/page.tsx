@@ -124,14 +124,20 @@ export default function AboutPage() {
           {/* Values Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
             {valuesData.map((value: any, idx: number) => {
-              const Icon = iconMap[value.icon] || Sparkles;
+              const isUrl = value.icon && (value.icon.startsWith('http') || value.icon.startsWith('/'));
+              const Icon = !isUrl ? (iconMap[value.icon] || Sparkles) : null;
+              
               return (
                 <div 
                   key={idx}
                   className="group relative bg-white rounded-2xl p-8 border border-slate-100 text-center hover:border-teal-200 transition-all duration-400 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100/50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-7 h-7 text-teal-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100/50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    {isUrl ? (
+                      <img src={value.icon} alt="" className="w-10 h-10 object-contain" />
+                    ) : (
+                      Icon && <Icon className="w-7 h-7 text-teal-600" />
+                    )}
                   </div>
                   <h4 className="font-bold text-slate-800 text-lg">
                     {locale === 'ar' ? value.labelAr : value.labelEn}

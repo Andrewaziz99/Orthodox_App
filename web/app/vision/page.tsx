@@ -127,9 +127,10 @@ export default function VisionPage() {
 
             <div className="space-y-12 md:space-y-16">
               {milestonesData.map((milestone: any, idx: number) => {
-                const Icon = iconMap[milestone.icon] || Lightbulb;
+                const isUrl = milestone.icon && (milestone.icon.startsWith('http') || milestone.icon.startsWith('/'));
+                const Icon = !isUrl ? (iconMap[milestone.icon] || Lightbulb) : null;
                 const isEven = idx % 2 === 0;
-                const isTeal = milestone.color === 'teal';
+                const isTeal = isEven; // Automatically alternate colors: Teal for even, Amber for odd
                 const title = locale === 'ar' ? milestone.titleAr : milestone.titleEn;
                 const description = locale === 'ar' ? milestone.descriptionAr : milestone.descriptionEn;
 
@@ -137,8 +138,12 @@ export default function VisionPage() {
                   <div key={idx} className={`relative flex items-start gap-8 md:gap-0 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                     {/* Timeline Dot */}
                     <div className="absolute start-8 md:start-1/2 -translate-x-1/2 z-10">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isTeal ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-amber-500/20'}`}>
-                        <Icon className="w-5 h-5 text-white" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden ${isTeal ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-amber-500/20'}`}>
+                        {isUrl ? (
+                          <img src={milestone.icon} alt="" className="w-7 h-7 object-contain" />
+                        ) : (
+                          Icon && <Icon className="w-5 h-5 text-white" />
+                        )}
                       </div>
                     </div>
 

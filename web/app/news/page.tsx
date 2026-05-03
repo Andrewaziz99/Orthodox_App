@@ -6,12 +6,14 @@ import Image from 'next/image';
 import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
-import { getNewsArticles, DynamicNewsArticle } from '@/lib/api/content';
+import { getNewsArticles, DynamicNewsArticle, pick } from '@/lib/api/content';
+import { useSiteContent } from '@/hooks/useSiteContent';
 
 export default function NewsPage() {
   const { t, dir, locale } = useLang();
   const [articles, setArticles] = React.useState<DynamicNewsArticle[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const { content, loading: contentLoading } = useSiteContent('news_page');
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
 
   React.useEffect(() => {
@@ -26,13 +28,17 @@ export default function NewsPage() {
     { label: t('nav.news'), href: '/news' }
   ];
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
+  const get = (key: string, fallbackKey?: string, defaultVal: string = '') => {
+    return pick(content, key, locale) || (fallbackKey ? t(fallbackKey) : defaultVal);
+  };
+
+  if (loading || contentLoading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <>
       <PageHero 
-        title={t('news.heading')} 
-        subtitle={locale === 'ar' ? 'آخر الأخبار والتحديثات من مدرسة الكتاب' : 'Latest news and updates from Bible School'}
+        title={get('heading', 'news.heading')} 
+        subtitle={get('subheading', undefined, locale === 'ar' ? 'آخر الأخبار والتحديثات من مدرسة الكتاب' : 'Latest news and updates from Bible School')}
         breadcrumbs={breadcrumbs} 
       />
 

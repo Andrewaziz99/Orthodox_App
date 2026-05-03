@@ -104,6 +104,86 @@ const contentSeeds: ContentSeed[] = [
   { section: 'contact', key: 'heading',    type: 'text',     ar: ar.contact.heading,    en: en.contact.heading },
   { section: 'contact', key: 'subheading', type: 'textarea', ar: ar.contact.subheading, en: en.contact.subheading },
   { section: 'contact', key: 'formLabels', type: 'json',     ar: JSON.stringify(ar.contact.form), en: JSON.stringify(en.contact.form) },
+
+  // Standalone About Page
+  { section: 'about_page', key: 'heading',              type: 'text',     ar: 'عن مدرستنا',                    en: 'About Our School' },
+  { section: 'about_page', key: 'subheading',           type: 'textarea', ar: 'تعرف على رؤيتنا وأهدافنا ومبادئنا الأساسية في تعليم كلمة الله.', en: 'Learn about our vision, goals, and core principles in teaching God\'s word.' },
+  { section: 'about_page', key: 'whoWeAreTitle',        type: 'text',     ar: 'من نحن',                         en: 'Who We Are' },
+  { section: 'about_page', key: 'whoWeAreDescription',  type: 'textarea', ar: 'مدرسة كتاب مقدس متخصصة تهدف لتقديم تعليم أرثوذكسي نقي للأطفال.', en: 'A specialized Bible school aiming to provide pure Orthodox education for children.' },
+  { section: 'about_page', key: 'whatWeOfferTitle',     type: 'text',     ar: 'ماذا نقدم',                      en: 'What We Offer' },
+  { section: 'about_page', key: 'whatWeOfferDescription', type: 'textarea', ar: 'مناهج دراسية متدرجة، مواد تعليمية تفاعلية، وبيئة تعليمية محفزة.', en: 'Graduated curricula, interactive educational materials, and a stimulating learning environment.' },
+  { section: 'about_page', key: 'valuesEyebrow',        type: 'text',     ar: 'قيمنا',                          en: 'Our Values' },
+  { section: 'about_page', key: 'valuesHeading',        type: 'text',     ar: 'ما يميزنا',                      en: 'What Sets Us Apart' },
+  { section: 'about_page', key: 'values',               type: 'json',     
+    ar: JSON.stringify([
+      { icon: 'Cross', labelAr: 'إيمان أرثوذكسي', labelEn: 'Orthodox Faith' },
+      { icon: 'BookOpen', labelAr: 'دراسة كتابية', labelEn: 'Bible Study' },
+      { icon: 'Users', labelAr: 'مجتمع متنامي', labelEn: 'Growing Community' },
+      { icon: 'Heart', labelAr: 'حب ورعاية', labelEn: 'Love & Care' },
+      { icon: 'GraduationCap', labelAr: 'تعليم منهجي', labelEn: 'Structured Learning' },
+      { icon: 'Sparkles', labelAr: 'تجربة فريدة', labelEn: 'Unique Experience' },
+    ]),
+    en: JSON.stringify([
+      { icon: 'Cross', labelAr: 'إيمان أرثوذكسي', labelEn: 'Orthodox Faith' },
+      { icon: 'BookOpen', labelAr: 'دراسة كتابية', labelEn: 'Bible Study' },
+      { icon: 'Users', labelAr: 'مجتمع متنامي', labelEn: 'Growing Community' },
+      { icon: 'Heart', labelAr: 'حب ورعاية', labelEn: 'Love & Care' },
+      { icon: 'GraduationCap', labelAr: 'تعليم منهجي', labelEn: 'Structured Learning' },
+      { icon: 'Sparkles', labelAr: 'تجربة فريدة', labelEn: 'Unique Experience' },
+    ])
+  },
+
+  // Standalone App Page
+  { section: 'app_page', key: 'heading',          type: 'text',     ar: 'تطبيق الهاتف',          en: 'Mobile Application' },
+  { section: 'app_page', key: 'description',      type: 'textarea', ar: 'كل المناهج والمواد التعليمية في متناول يدك.', en: 'All curricula and educational materials at your fingertips.' },
+  { section: 'app_page', key: 'downloadHeading',  type: 'text',     ar: 'حمّل تطبيقنا اليوم',     en: 'Download Our App Today' },
+  { section: 'app_page', key: 'downloadSubheading', type: 'textarea', ar: 'احصل على وصول كامل لجميع المناهج والمحتوى التعليمي من جهازك المحمول.', en: 'Get full access to all curricula and educational content from your mobile device.' },
+  { section: 'app_page', key: 'featuresEyebrow',  type: 'text',     ar: 'مميزات التطبيق',        en: 'App Features' },
+  { section: 'app_page', key: 'featuresHeading',  type: 'text',     ar: 'لماذا تطبيقنا؟',         en: 'Why Our App?' },
+  { section: 'app_page', key: 'features',         type: 'json',     
+    ar: JSON.stringify([
+      { icon: 'BookOpen', titleAr: 'محتوى كتابي شامل', titleEn: 'Comprehensive Biblical Content', descriptionAr: 'جميع المناهج والمواد التعليمية في مكان واحد', descriptionEn: 'All curricula and educational materials in one place' },
+      { icon: 'Zap', titleAr: 'سريع وسهل الاستخدام', titleEn: 'Fast & Easy to Use', descriptionAr: 'واجهة بسيطة وسلسة مصممة للأطفال والمعلمين', descriptionEn: 'Simple and smooth interface designed for children and teachers' },
+      { icon: 'Shield', titleAr: 'آمن للأطفال', titleEn: 'Safe for Children', descriptionAr: 'بيئة آمنة ومحمية لتصفح المحتوى الكتابي', descriptionEn: 'Safe and protected environment for browsing biblical content' },
+      { icon: 'Star', titleAr: 'تحديثات مستمرة', titleEn: 'Regular Updates', descriptionAr: 'محتوى جديد ومحدث بشكل دوري', descriptionEn: 'New and regularly updated content' },
+    ]),
+    en: JSON.stringify([
+      { icon: 'BookOpen', titleAr: 'محتوى كتابي شامل', titleEn: 'Comprehensive Biblical Content', descriptionAr: 'جميع المناهج والمواد التعليمية في مكان واحد', descriptionEn: 'All curricula and educational materials in one place' },
+      { icon: 'Zap', titleAr: 'سريع وسهل الاستخدام', titleEn: 'Fast & Easy to Use', descriptionAr: 'واجهة بسيطة وسلسة مصممة للأطفال والمعلمين', descriptionEn: 'Simple and smooth interface designed for children and teachers' },
+      { icon: 'Shield', titleAr: 'آمن للأطفال', titleEn: 'Safe for Children', descriptionAr: 'بيئة آمنة ومحمية لتصفح المحتوى الكتابي', descriptionEn: 'Safe and protected environment for browsing biblical content' },
+      { icon: 'Star', titleAr: 'تحديثات مستمرة', titleEn: 'Regular Updates', descriptionAr: 'محتوى جديد ومحدث بشكل دوري', descriptionEn: 'New and regularly updated content' },
+    ])
+  },
+
+  // Standalone Vision Page
+  { section: 'vision_page', key: 'heading',          type: 'text',     ar: 'رؤيتنا',                    en: 'Our Vision' },
+  { section: 'vision_page', key: 'description',      type: 'textarea', ar: 'تعرف على خطواتنا نحو مستقبل أفضل لأبنائنا.', en: 'Learn about our steps towards a better future for our children.' },
+  { section: 'vision_page', key: 'visionHeading',    type: 'text',     ar: 'نبني جيلاً يعرف الكتاب المقدس ويحيا بتعاليمه', en: 'Building a Generation That Knows the Bible and Lives by Its Teachings' },
+  { section: 'vision_page', key: 'visionText',       type: 'textarea', ar: 'رؤيتنا هي تقديم تعليم كتابي أرثوذكسي متميز يصل لكل طفل.', en: 'Our vision is to provide outstanding Orthodox biblical education that reaches every child.' },
+  { section: 'vision_page', key: 'roadmapEyebrow',   type: 'text',     ar: 'خطة العمل',                en: 'Our Roadmap' },
+  { section: 'vision_page', key: 'roadmapHeading',   type: 'text',     ar: 'مسيرة التطوير',            en: 'Development Journey' },
+  { section: 'vision_page', key: 'milestones',       type: 'json',     
+    ar: JSON.stringify([
+      { year: '2024', titleAr: 'إطلاق المنهج الأول', titleEn: 'First Curriculum Launch', descriptionAr: 'إنطلاق أول منهج للدراسة الكتابية للأطفال', descriptionEn: 'Launch of the first Bible study curriculum for children', icon: 'Lightbulb', color: 'teal' },
+      { year: '2025', titleAr: 'التوسع الرقمي', titleEn: 'Digital Expansion', descriptionAr: 'إطلاق المنصة الرقمية والتطبيق الذكي', descriptionEn: 'Launch of the digital platform and smart app', icon: 'Globe', color: 'amber' },
+      { year: '2026', titleAr: 'مناهج متعددة', titleEn: 'Multiple Curricula', descriptionAr: 'إضافة مناهج جديدة تغطي فئات عمرية مختلفة', descriptionEn: 'Adding new curricula covering different age groups', icon: 'TrendingUp', color: 'teal' },
+      { year: '2027+', titleAr: 'التأثير العالمي', titleEn: 'Global Impact', descriptionAr: 'الوصول لأكبر عدد من الأطفال في العالم', descriptionEn: 'Reaching the maximum number of children worldwide', icon: 'Compass', color: 'amber' },
+    ]),
+    en: JSON.stringify([
+      { year: '2024', titleAr: 'إطلاق المنهج الأول', titleEn: 'First Curriculum Launch', descriptionAr: 'إنطلاق أول منهج للدراسة الكتابية للأطفال', descriptionEn: 'Launch of the first Bible study curriculum for children', icon: 'Lightbulb', color: 'teal' },
+      { year: '2025', titleAr: 'التوسع الرقمي', titleEn: 'Digital Expansion', descriptionAr: 'إطلاق المنصة الرقمية والتطبيق الذكي', descriptionEn: 'Launch of the digital platform and smart app', icon: 'Globe', color: 'amber' },
+      { year: '2026', titleAr: 'مناهج متعددة', titleEn: 'Multiple Curricula', descriptionAr: 'إضافة مناهج جديدة تغطي فئات عمرية مختلفة', descriptionEn: 'Adding new curricula covering different age groups', icon: 'TrendingUp', color: 'teal' },
+      { year: '2027+', titleAr: 'التأثير العالمي', titleEn: 'Global Impact', descriptionAr: 'الوصول لأكبر عدد من الأطفال في العالم', descriptionEn: 'Reaching the maximum number of children worldwide', icon: 'Compass', color: 'amber' },
+    ])
+  },
+
+  // Standalone Curricula Listing Page
+  { section: 'curricula_page', key: 'heading',    type: 'text',     ar: 'مناهجنا التعليمية',          en: 'Our Educational Curricula' },
+  { section: 'curricula_page', key: 'subheading', type: 'textarea', ar: 'مسار متدرج من المناهج الكتابية المصممة بعناية لتناسب المراحل العمرية المختلفة', en: 'A progressive path of carefully designed biblical curricula to suit different age groups' },
+
+  // Standalone News Listing Page
+  { section: 'news_page', key: 'heading',    type: 'text',     ar: 'أحدث الأخبار',               en: 'Latest News' },
+  { section: 'news_page', key: 'subheading', type: 'textarea', ar: 'تابع آخر التحديثات والفعاليات والأخبار من مدرسة الكتاب المقدس', en: 'Follow the latest updates, events, and news from Bible School' },
 ];
 
 // ─── News seeds (from static data) ───────────────────────────────────────────

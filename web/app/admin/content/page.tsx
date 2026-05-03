@@ -22,7 +22,11 @@ import {
   Newspaper,
   LayoutDashboard,
   LayoutTemplate,
-  Upload
+  Upload,
+  Sparkles,
+  Smartphone,
+  Eye,
+  Megaphone
 } from 'lucide-react';
 import {
   DndContext, 
@@ -66,22 +70,24 @@ export default function ContentAdminPage() {
   
   // Sections specifically for the Home Page
   const homeSections = [
-    { id: 'hero', label: 'Hero Section' },
-    { id: 'about', label: 'About Us' },
-    { id: 'audience', label: 'Audience' },
-    { id: 'app', label: 'Mobile App' },
-    { id: 'curricula_home', label: 'Curricula' },
-    { id: 'news_home', label: 'News' },
-    { id: 'videos', label: 'Video Gallery' },
-    { id: 'vision', label: 'Future Vision' },
-    { id: 'cta', label: 'Bottom CTA' },
+    { id: 'hero', label: 'Hero Section', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'about', label: 'About Us', icon: <Users className="w-4 h-4" /> },
+    { id: 'audience', label: 'Audience', icon: <Users className="w-4 h-4" /> },
+    { id: 'app', label: 'Mobile App', icon: <Smartphone className="w-4 h-4" /> },
+    { id: 'curricula_home', label: 'Curricula', icon: <GraduationCap className="w-4 h-4" /> },
+    { id: 'news_home', label: 'News', icon: <Newspaper className="w-4 h-4" /> },
+    { id: 'videos', label: 'Video Gallery', icon: <Play className="w-4 h-4" /> },
+    { id: 'vision', label: 'Future Vision', icon: <Eye className="w-4 h-4" /> },
+    { id: 'cta', label: 'Bottom CTA', icon: <Megaphone className="w-4 h-4" /> },
   ];
 
-  // Sections for other main pages
+  // Standalone Main Pages
   const internalPages = [
-    { id: 'about', label: 'About Page Details' },
-    { id: 'app', label: 'App Page Details' },
-    { id: 'vision', label: 'Vision Page Details' },
+    { id: 'about_page', label: 'About Us Page', icon: <FileText className="w-4 h-4" /> },
+    { id: 'app_page', label: 'App Details Page', icon: <Smartphone className="w-4 h-4" /> },
+    { id: 'vision_page', label: 'Future Vision Page', icon: <Eye className="w-4 h-4" /> },
+    { id: 'curricula_page', label: 'Curricula Listing', icon: <GraduationCap className="w-4 h-4" /> },
+    { id: 'news_page', label: 'News Listing', icon: <Newspaper className="w-4 h-4" /> },
   ];
 
   // Inventory (CRUD) managers
@@ -89,6 +95,9 @@ export default function ContentAdminPage() {
     { id: 'curricula_inventory', label: 'Curricula Library', icon: <GraduationCap className="w-4 h-4" /> },
     { id: 'news_inventory', label: 'News Articles', icon: <Newspaper className="w-4 h-4" /> },
   ];
+
+  const allDefinitions = [...homeSections, ...internalPages, ...inventory];
+  const activeDef = allDefinitions.find(d => d.id === activeSection);
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -99,84 +108,103 @@ export default function ContentAdminPage() {
         </div>
       </div>
 
-      {/* Navigation & Content Area */}
-      <div className="grid md:grid-cols-4 gap-8">
-        {/* Sidebar */}
-        <div className="col-span-1 space-y-6 sticky top-24 h-fit">
-          <Card className="p-4 shadow-sm">
-            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
-              <LayoutTemplate className="w-4 h-4" />
-              Home Page
-            </h3>
-            <div className="space-y-1">
-              {homeSections.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </Card>
+      {/* Two-Tier Horizontal Navigation */}
+      <div className="z-10 bg-white border-b border-slate-100 shadow-sm mb-8 -mx-8 px-8">
+        <div className="max-w-7xl mx-auto px-8">
+          {/* Tier 1: Category Selector */}
+          <div className="flex gap-8 border-b border-slate-50">
+            {[
+              { id: 'home', label: 'Home Page', color: 'teal', icon: <LayoutTemplate className="w-4 h-4" /> },
+              { id: 'inventory', label: 'Data Libraries', color: 'indigo', icon: <Database className="w-4 h-4" /> },
+              { id: 'pages', label: 'Standalone Pages', color: 'amber', icon: <LayoutDashboard className="w-4 h-4" /> },
+            ].map(cat => {
+              const isHome = cat.id === 'home' && homeSections.some(s => s.id === activeSection);
+              const isInv = cat.id === 'inventory' && inventory.some(s => s.id === activeSection);
+              const isPage = cat.id === 'pages' && internalPages.some(s => s.id === activeSection);
+              const isCatSelected = isHome || isInv || isPage;
 
-          <Card className="p-4 shadow-sm">
-            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              Inventory
-            </h3>
-            <div className="space-y-1">
-              {inventory.map(s => (
+              const activeStyles: Record<string, string> = {
+                teal: 'border-teal-600 text-teal-700',
+                indigo: 'border-indigo-600 text-indigo-700',
+                amber: 'border-amber-600 text-amber-700'
+              };
+
+              return (
                 <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                  key={cat.id}
+                  onClick={() => {
+                    if (cat.id === 'home') setActiveSection('hero');
+                    if (cat.id === 'inventory') setActiveSection('curricula_inventory');
+                    if (cat.id === 'pages') setActiveSection('about_page');
+                  }}
+                  className={`flex items-center gap-2 py-4 px-1 border-b-2 transition-all font-black text-xs uppercase tracking-widest ${
+                    isCatSelected 
+                      ? activeStyles[cat.color]
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
                 >
-                  <span className="flex items-center gap-2">
-                    {s.icon}
+                  {cat.icon}
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tier 2: Horizontal Scrollable Section Dock */}
+          <div className="py-4 px-4 overflow-x-auto no-scrollbar flex items-center gap-3 scroll-smooth">
+            {(homeSections.some(s => s.id === activeSection) ? homeSections : 
+              inventory.some(s => s.id === activeSection) ? inventory : internalPages).map(s => {
+                const isHome = homeSections.some(h => h.id === s.id);
+                const isInv = inventory.some(i => i.id === s.id);
+                
+                const activeStyles: Record<string, string> = {
+                  teal: 'bg-teal-600 text-white border-teal-600 shadow-lg shadow-teal-600/20 scale-105',
+                  indigo: 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20 scale-105',
+                  amber: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 scale-105'
+                };
+                
+                const colorKey = isHome ? 'teal' : isInv ? 'indigo' : 'amber';
+                
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveSection(s.id)}
+                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all border whitespace-nowrap ${
+                      activeSection === s.id 
+                        ? activeStyles[colorKey]
+                        : 'bg-slate-50 text-slate-600 border-slate-100 hover:bg-white hover:border-slate-200'
+                    }`}
+                  >
+                    {React.cloneElement(s.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
                     {s.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4 shadow-sm">
-            <h3 className="font-black text-slate-900 mb-4 px-2 text-sm uppercase tracking-wider opacity-50 flex items-center gap-2">
-              <LayoutTemplate className="w-4 h-4" />
-              Internal Pages
-            </h3>
-            <div className="space-y-1">
-              {internalPages.map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveSection(s.id)}
-                  className={`w-full text-start px-4 py-2.5 rounded-xl font-bold transition-all ${activeSection === s.id ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </Card>
+                  </button>
+                );
+              })}
+            {/* Edge Spacer to prevent cropping on far right */}
+            <div className="flex-shrink-0 w-8 h-4" />
+          </div>
         </div>
+      </div>
 
-        {/* Editor Area */}
-        <div className="col-span-3">
-           {activeSection === 'videos' ? (
-             <VideoManager />
-           ) : activeSection === 'curricula_home' ? (
-             <CurriculaHomeManager />
-           ) : activeSection === 'news_home' ? (
-             <NewsHomeManager />
-           ) : activeSection === 'curricula_inventory' ? (
-             <CurriculaInventoryManager />
-           ) : activeSection === 'news_inventory' ? (
-             <NewsInventoryManager />
-           ) : (
-             <SectionEditor sectionId={activeSection} />
-           )}
-        </div>
+      {/* Editor Area */}
+      <div className="max-w-5xl mx-auto pt-8 pb-24 px-4">
+         {activeSection === 'videos' ? (
+           <VideoManager />
+         ) : activeSection === 'curricula_home' ? (
+           <CurriculaHomeManager />
+         ) : activeSection === 'news_home' ? (
+           <NewsHomeManager />
+         ) : activeSection === 'curricula_inventory' ? (
+           <CurriculaInventoryManager />
+         ) : activeSection === 'news_inventory' ? (
+           <NewsInventoryManager />
+         ) : (
+           <SectionEditor 
+             sectionId={activeSection} 
+             label={activeDef?.label || activeSection} 
+             icon={activeDef?.icon}
+           />
+         )}
       </div>
     </div>
   );
@@ -184,7 +212,7 @@ export default function ContentAdminPage() {
 
 // ─── Section Editor Component ──────────────────────────────────────────────────
 
-function SectionEditor({ sectionId }: { sectionId: string }) {
+function SectionEditor({ sectionId, label, icon }: { sectionId: string, label: string, icon?: React.ReactNode }) {
   const { content, loading } = useSiteContent(sectionId);
   
   // Local state for edits
@@ -201,7 +229,7 @@ function SectionEditor({ sectionId }: { sectionId: string }) {
         
         const jsonKeys = [
           'stats', 'features', 'churches', 'servants', 'children', 
-          'items', 'pillars', 'formLabels', 'milestones', 'socialLinks'
+          'items', 'pillars', 'formLabels', 'milestones', 'socialLinks', 'values'
         ];
         if (jsonKeys.includes(key)) fieldType = 'json';
         else if (key.toLowerCase().includes('image')) fieldType = 'image';
@@ -255,10 +283,19 @@ function SectionEditor({ sectionId }: { sectionId: string }) {
   }
 
   return (
-    <Card className="p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-black text-slate-900 capitalize">{sectionId} Section</h2>
-        <Button onClick={handleSave} disabled={saving}>
+    <Card className="p-8 shadow-sm border-slate-200">
+      <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 shadow-inner">
+            {icon ? React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' }) : <Layout className="w-6 h-6" />}
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900">{label}</h2>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{sectionId}</p>
+          </div>
+        </div>
+        <Button onClick={handleSave} disabled={saving} className="shadow-lg shadow-teal-600/20 px-6">
+          <Save className="w-4 h-4 mr-2" />
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
@@ -418,32 +455,144 @@ function DynamicJsonEditor({
         );
       }
 
+      const keyName = path[path.length - 1]?.toString().toLowerCase() || '';
+      const showInAr = !keyName.endsWith('en');
+      const showInEn = !keyName.endsWith('ar');
+
       return (
         <div className="grid grid-cols-2 gap-4 mb-2">
-           <input type="text" value={String(nodeAr)} onChange={(e) => handleChange(path, 'ar', e.target.value)} className="w-full bg-white border-slate-200 rounded-lg p-2 text-sm" dir="rtl" />
-           <input type="text" value={String(nodeEn || '')} onChange={(e) => handleChange(path, 'en', e.target.value)} className="w-full bg-white border-slate-200 rounded-lg p-2 text-sm" />
+           {showInAr ? (
+             <input type="text" value={String(nodeAr)} onChange={(e) => handleChange(path, 'ar', e.target.value)} className="w-full bg-white border-slate-200 rounded-lg p-2 text-sm" dir="rtl" />
+           ) : <div />}
+           {showInEn ? (
+             <input type="text" value={String(nodeEn || '')} onChange={(e) => handleChange(path, 'en', e.target.value)} className="w-full bg-white border-slate-200 rounded-lg p-2 text-sm" />
+           ) : <div />}
         </div>
       );
     }
     if (Array.isArray(nodeAr)) {
+       const addItem = () => {
+         const firstItem = nodeAr[0] || {};
+         const newItem: any = {};
+         Object.keys(firstItem).forEach(k => newItem[k] = '');
+         const updateNested = (obj: any, currentPath: (string | number)[]): any => {
+           if (currentPath.length === 0) return [...obj, newItem];
+           const [head, ...rest] = currentPath;
+           if (Array.isArray(obj)) {
+             const newArr = [...obj];
+             newArr[head as number] = updateNested(newArr[head as number], rest);
+             return newArr;
+           }
+           return { ...obj, [head]: updateNested(obj[head], rest) };
+         };
+         onChange({ 
+           ...field, 
+           ar: JSON.stringify(updateNested(dataAr, path)), 
+           en: JSON.stringify(updateNested(dataEn, path)) 
+         });
+       };
+
+       const removeItem = (index: number) => {
+         if (!confirm('Are you sure?')) return;
+         const updateNested = (obj: any, currentPath: (string | number)[]): any => {
+           if (currentPath.length === 0) {
+             const newArr = [...obj];
+             newArr.splice(index, 1);
+             return newArr;
+           }
+           const [head, ...rest] = currentPath;
+           if (Array.isArray(obj)) {
+             const newArr = [...obj];
+             newArr[head as number] = updateNested(newArr[head as number], rest);
+             return newArr;
+           }
+           return { ...obj, [head]: updateNested(obj[head], rest) };
+         };
+         onChange({ 
+           ...field, 
+           ar: JSON.stringify(updateNested(dataAr, path)), 
+           en: JSON.stringify(updateNested(dataEn, path)) 
+         });
+       };
+
        return (
-         <div className="space-y-4">
+         <div className="space-y-6">
            {nodeAr.map((item, idx) => (
-             <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200">
-               <span className="text-xs font-bold text-slate-400">Item {idx + 1}</span>
-               {renderNode(item, nodeEn?.[idx], [...path, idx])}
+             <div key={idx} className="relative group/item">
+                <div className="absolute -left-10 top-0 bottom-0 flex items-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                  <button onClick={() => removeItem(idx)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg border border-rose-100 bg-white">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4">Item {idx + 1}</div>
+                  {renderNode(item, nodeEn?.[idx], [...path, idx])}
+                </div>
              </div>
            ))}
+           <button 
+             onClick={addItem}
+             className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold hover:border-teal-300 hover:text-teal-600 hover:bg-teal-50/30 transition-all flex items-center justify-center gap-2 group"
+           >
+             <Plus className="w-5 h-5 group-hover:scale-110 transition-transform" />
+             Add New Item
+           </button>
          </div>
        );
     }
     if (typeof nodeAr === 'object' && nodeAr !== null) {
+       // Group fields that have Ar/En counterparts
+       const keys = Object.keys(nodeAr);
+       const processed = new Set<string>();
+       const groups: { label: string; arKey: string; enKey: string }[] = [];
+
+       keys.forEach(k => {
+         if (processed.has(k) || k.toLowerCase() === 'color') return;
+         const base = k.replace(/(Ar|En)$/, '');
+         const arKey = base + (k.endsWith('Ar') || k.endsWith('En') ? 'Ar' : '');
+         const enKey = base + (k.endsWith('Ar') || k.endsWith('En') ? 'En' : '');
+         if (keys.includes(arKey) && keys.includes(enKey) && arKey !== enKey) {
+           groups.push({ label: base, arKey, enKey });
+           processed.add(arKey);
+           processed.add(enKey);
+         } else {
+           groups.push({ label: k, arKey: k, enKey: k });
+           processed.add(k);
+         }
+       });
+
        return (
-         <div className="space-y-3">
-           {Object.keys(nodeAr).map(k => (
-             <div key={k} className="pl-4 border-l-2 border-slate-100">
-               <span className="block text-xs font-bold text-teal-700 capitalize mb-2">{k}</span>
-               {renderNode(nodeAr[k], nodeEn?.[k], [...path, k])}
+         <div className="space-y-6">
+           {groups.map((group, idx) => (
+             <div key={idx} className="pl-4 border-l-2 border-slate-100">
+               <span className="block text-xs font-black text-teal-700 uppercase mb-2 tracking-wider">
+                 {group.label}
+               </span>
+               {group.arKey === group.enKey ? (
+                 renderNode(nodeAr[group.arKey], nodeEn?.[group.enKey], [...path, group.arKey])
+               ) : (
+                 <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-1">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase ps-1">Arabic Content</span>
+                     <input 
+                       type="text" 
+                       value={String(nodeAr[group.arKey] || '')} 
+                       onChange={(e) => handleChange([...path, group.arKey], 'ar', e.target.value)} 
+                       className="w-full bg-slate-50/50 border-slate-200 rounded-lg p-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all" 
+                       dir="rtl" 
+                     />
+                   </div>
+                   <div className="space-y-1">
+                     <span className="text-[10px] font-bold text-slate-400 uppercase ps-1">English Content</span>
+                     <input 
+                       type="text" 
+                       value={String(nodeEn?.[group.enKey] || '')} 
+                       onChange={(e) => group.enKey && handleChange([...path, group.enKey], 'en', e.target.value)} 
+                       className="w-full bg-slate-50/50 border-slate-200 rounded-lg p-2 text-sm focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all" 
+                     />
+                   </div>
+                 </div>
+               )}
              </div>
            ))}
          </div>
