@@ -1,6 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { 
+  IsString, 
+  IsOptional, 
+  IsBoolean, 
+  IsNumber, 
+  IsArray, 
+  IsEnum 
+} from 'class-validator';
 import { SiteContent, ContentType } from './site-content.entity';
 import { NewsArticle } from './news-article.entity';
 import { Curriculum } from './curriculum.entity';
@@ -8,49 +16,133 @@ import { Curriculum } from './curriculum.entity';
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 
 export class UpsertContentDto {
+  @IsString()
+  @IsOptional()
   valueAr?: string;
+
+  @IsString()
+  @IsOptional()
   valueEn?: string;
+
+  @IsEnum(ContentType)
+  @IsOptional()
   type?: ContentType;
 }
 
 export class CreateNewsDto {
+  @IsString()
   slug: string;
+
+  @IsString()
   titleAr: string;
+
+  @IsString()
   titleEn: string;
+
+  @IsString()
   excerptAr: string;
+
+  @IsString()
   excerptEn: string;
+
+  @IsString()
   bodyAr: string;
+
+  @IsString()
   bodyEn: string;
+
+  @IsString()
   categoryAr: string;
+
+  @IsString()
   categoryEn: string;
+
+  @IsString()
   date: string;
+
+  @IsString()
+  @IsOptional()
   author?: string;
+
+  @IsString()
+  @IsOptional()
   image?: string;
+
+  @IsBoolean()
+  @IsOptional()
   published?: boolean;
+
+  @IsNumber()
+  @IsOptional()
   order?: number;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
   relatedSlugs?: string[];
 }
 
 export class UpdateNewsDto extends CreateNewsDto {}
 
 export class CreateCurriculumDto {
+  @IsString()
   slug: string;
+
+  @IsString()
   number: string;
+
+  @IsString()
   badge: string;
+
+  @IsString()
   titleAr: string;
+
+  @IsString()
   titleEn: string;
+
+  @IsString()
   durationAr: string;
+
+  @IsString()
   durationEn: string;
+
+  @IsString()
   audienceAr: string;
+
+  @IsString()
   audienceEn: string;
+
+  @IsString()
   descriptionAr: string;
+
+  @IsString()
   descriptionEn: string;
+
+  @IsString()
   ageRangeAr: string;
+
+  @IsString()
   ageRangeEn: string;
+
+  @IsString()
+  @IsOptional()
   fullContentAr?: string;
+
+  @IsString()
+  @IsOptional()
   fullContentEn?: string;
+
+  @IsNumber()
+  @IsOptional()
   order?: number;
+
+  @IsBoolean()
+  @IsOptional()
   published?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
   relatedSlugs?: string[];
 }
 

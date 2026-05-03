@@ -6,7 +6,12 @@ import {
   Unique,
 } from 'typeorm';
 
-export type ContentType = 'text' | 'textarea' | 'image' | 'json';
+export enum ContentType {
+  TEXT = 'text',
+  TEXTAREA = 'textarea',
+  IMAGE = 'image',
+  JSON = 'json',
+}
 
 @Entity('site_content')
 @Unique(['section', 'key'])
@@ -31,10 +36,10 @@ export class SiteContent {
   /** Determines the input type used in the admin form */
   @Column({
     type: 'enum',
-    enum: ['text', 'textarea', 'image', 'json'],
-    default: 'text',
+    enum: ContentType,
+    default: ContentType.TEXT,
   })
-  type: ContentType = 'text';
+  type: ContentType = ContentType.TEXT;
 
   @UpdateDateColumn()
   updatedAt!: Date;

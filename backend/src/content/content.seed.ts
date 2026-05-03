@@ -13,7 +13,7 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { join } from 'path';
 import { readFileSync } from 'fs';
-import { SiteContent } from './site-content.entity';
+import { SiteContent, ContentType } from './site-content.entity';
 import { NewsArticle } from './news-article.entity';
 import { Curriculum } from './curriculum.entity';
 
@@ -204,7 +204,7 @@ async function seed() {
       await scRepo.save(scRepo.create({
         section: item.section,
         key: item.key,
-        type: item.type || 'text',
+        type: (item.type as ContentType) || ContentType.TEXT,
         valueAr: item.ar,
         valueEn: item.en,
       }));
