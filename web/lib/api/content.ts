@@ -3,7 +3,7 @@
  * API client functions for fetching dynamic CMS content from the NestJS backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+import { api } from './client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,15 +108,11 @@ export function pick(
  */
 export async function getSectionContent(section: string, noCache = false): Promise<SectionContent> {
   try {
-    const fetchOptions: RequestInit = noCache 
-      ? { cache: 'no-store' } 
-      : { next: { revalidate: 60 } };
-      
-    const res = await fetch(`${API_BASE}/content/${section}`, fetchOptions);
-    if (!res.ok) return {};
-    const items: SiteContentItem[] = await res.json();
+    const options = noCache ? { cache: 'no-store' as RequestCache } : { next: { revalidate: 60 } } as any;
+    const items = await api.get<SiteContentItem[]>(`/content/${section}`, { ...options, requiresAuth: false });
     return normalizeSectionContent(items);
-  } catch {
+  } catch (error) {
+    console.error(`Failed to fetch section content (${section}):`, error);
     return {};
   }
 }
@@ -125,12 +121,8 @@ export async function getSectionContent(section: string, noCache = false): Promi
 
 export async function getNewsArticles(all = false): Promise<DynamicNewsArticle[]> {
   try {
-    const url = all
-      ? `${API_BASE}/news?all=true`
-      : `${API_BASE}/news`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    return res.json();
+    const url = all ? '/news?all=true' : '/news';
+    return await api.get<DynamicNewsArticle[]>(url, { requiresAuth: false, next: { revalidate: 60 } } as any);
   } catch {
     return [];
   }
@@ -138,9 +130,7 @@ export async function getNewsArticles(all = false): Promise<DynamicNewsArticle[]
 
 export async function getNewsArticle(slug: string): Promise<DynamicNewsArticle | null> {
   try {
-    const res = await fetch(`${API_BASE}/news/${slug}`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    return res.json();
+    return await api.get<DynamicNewsArticle>(`/news/${slug}`, { requiresAuth: false, next: { revalidate: 60 } } as any);
   } catch {
     return null;
   }
@@ -149,21 +139,16 @@ export async function getNewsArticle(slug: string): Promise<DynamicNewsArticle |
 export async function upsertNews(article: Partial<DynamicNewsArticle>, token: string): Promise<DynamicNewsArticle | null> {
   try {
     const isUpdate = !!article.id;
-    const url = isUpdate ? `${API_BASE}/news/${article.id}` : `${API_BASE}/news`;
+    const url = isUpdate ? `/news/${article.id}` : '/news';
     
     // Strip metadata
     const { createdAt, updatedAt, ...payload } = article as any;
 
-    const res = await fetch(url, {
-      method: isUpdate ? 'PATCH' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) return null;
-    return res.json();
+    if (isUpdate) {
+      return await api.patch<DynamicNewsArticle>(url, payload);
+    } else {
+      return await api.post<DynamicNewsArticle>(url, payload);
+    }
   } catch {
     return null;
   }
@@ -171,13 +156,8 @@ export async function upsertNews(article: Partial<DynamicNewsArticle>, token: st
 
 export async function deleteNews(id: string, token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/news/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return res.ok;
+    await api.delete(`/news/${id}`);
+    return true;
   } catch {
     return false;
   }
@@ -187,12 +167,8 @@ export async function deleteNews(id: string, token: string): Promise<boolean> {
 
 export async function getCurriculaList(all = false): Promise<DynamicCurriculum[]> {
   try {
-    const url = all
-      ? `${API_BASE}/curricula?all=true`
-      : `${API_BASE}/curricula`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    return res.json();
+    const url = all ? '/curricula?all=true' : '/curricula';
+    return await api.get<DynamicCurriculum[]>(url, { requiresAuth: false, next: { revalidate: 60 } } as any);
   } catch {
     return [];
   }
@@ -200,9 +176,7 @@ export async function getCurriculaList(all = false): Promise<DynamicCurriculum[]
 
 export async function getCurriculum(slug: string): Promise<DynamicCurriculum | null> {
   try {
-    const res = await fetch(`${API_BASE}/curricula/${slug}`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    return res.json();
+    return await api.get<DynamicCurriculum>(`/curricula/${slug}`, { requiresAuth: false, next: { revalidate: 60 } } as any);
   } catch {
     return null;
   }
@@ -211,21 +185,16 @@ export async function getCurriculum(slug: string): Promise<DynamicCurriculum | n
 export async function upsertCurriculum(curriculum: Partial<DynamicCurriculum>, token: string): Promise<DynamicCurriculum | null> {
   try {
     const isUpdate = !!curriculum.id;
-    const url = isUpdate ? `${API_BASE}/curricula/${curriculum.id}` : `${API_BASE}/curricula`;
+    const url = isUpdate ? `/curricula/${curriculum.id}` : '/curricula';
     
     // Strip metadata that backend might reject
     const { createdAt, updatedAt, ...payload } = curriculum as any;
 
-    const res = await fetch(url, {
-      method: isUpdate ? 'PATCH' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) return null;
-    return res.json();
+    if (isUpdate) {
+      return await api.patch<DynamicCurriculum>(url, payload);
+    } else {
+      return await api.post<DynamicCurriculum>(url, payload);
+    }
   } catch {
     return null;
   }
@@ -233,13 +202,8 @@ export async function upsertCurriculum(curriculum: Partial<DynamicCurriculum>, t
 
 export async function deleteCurriculum(id: string, token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/curricula/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return res.ok;
+    await api.delete(`/curricula/${id}`);
+    return true;
   } catch {
     return false;
   }
@@ -249,9 +213,7 @@ export async function deleteCurriculum(id: string, token: string): Promise<boole
 
 export async function getVideos(): Promise<DynamicVideo[]> {
   try {
-    const res = await fetch(`${API_BASE}/videos`, { next: { revalidate: 60 } });
-    if (!res.ok) return [];
-    return res.json();
+    return await api.get<DynamicVideo[]>('/videos', { requiresAuth: false, next: { revalidate: 60 } } as any);
   } catch {
     return [];
   }
@@ -260,17 +222,12 @@ export async function getVideos(): Promise<DynamicVideo[]> {
 export async function upsertVideo(video: Partial<DynamicVideo>, token: string): Promise<DynamicVideo | null> {
   try {
     const isUpdate = !!video.id;
-    const url = isUpdate ? `${API_BASE}/videos/${video.id}` : `${API_BASE}/videos`;
-    const res = await fetch(url, {
-      method: isUpdate ? 'PATCH' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(video),
-    });
-    if (!res.ok) return null;
-    return res.json();
+    const url = isUpdate ? `/videos/${video.id}` : '/videos';
+    if (isUpdate) {
+      return await api.patch<DynamicVideo>(url, video);
+    } else {
+      return await api.post<DynamicVideo>(url, video);
+    }
   } catch {
     return null;
   }
@@ -278,42 +235,14 @@ export async function upsertVideo(video: Partial<DynamicVideo>, token: string): 
 
 export async function deleteVideo(id: string, token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/videos/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return res.ok;
+    await api.delete(`/videos/${id}`);
+    return true;
   } catch {
     return false;
   }
 }
 
-// ─── Admin write helpers (require auth token) ─────────────────────────────────
-
-export async function upsertSiteContent(
-  section: string,
-  key: string,
-  valueAr: string,
-  valueEn: string,
-  type: string,
-  token: string,
-): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/content/${section}/${key}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ valueAr, valueEn, type }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+// ─── Admin write helpers ──────────────────────────────────────────────────────
 
 export async function bulkUpsertSection(
   section: string,
@@ -321,15 +250,8 @@ export async function bulkUpsertSection(
   token: string,
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/content/${section}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(entries),
-    });
-    return res.ok;
+    await api.put(`/content/${section}`, entries);
+    return true;
   } catch {
     return false;
   }
@@ -339,11 +261,15 @@ export async function uploadImage(file: File, token: string): Promise<string | n
   try {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`${API_BASE}/upload`, {
+    
+    // Custom request for FormData
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3005';
+    const res = await fetch(`${API_BASE_URL}/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
+    
     if (!res.ok) return null;
     const data = await res.json();
     return data.url as string;
