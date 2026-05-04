@@ -33,21 +33,19 @@ You need to set up your local environment files:
    ```
 
 ## 4. Running the Project
-Open two terminal windows to run the services simultaneously:
+You can launch both the backend and frontend simultaneously from the root directory:
 
-### Start the Backend
-```bash
-cd backend
-npm install
-npm run start:dev
-```
+1. **Install all dependencies** (if you haven't yet):
+   ```bash
+   npm run install:all
+   ```
 
-### Start the Frontend
-```bash
-cd web
-npm install
-npm run dev
-```
+2. **Launch the App**:
+   ```bash
+   npm run dev
+   ```
+
+This will start the backend on port 3000 and the frontend on port 3001 using `concurrently`.
 
 ## 5. Helpful Links
 - **Website**: [http://localhost:3001](http://localhost:3001)
