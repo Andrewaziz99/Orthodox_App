@@ -5,43 +5,64 @@ import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { BookOpen, Users, GraduationCap, Heart, Cross, Sparkles } from 'lucide-react';
 
+import { useSiteContent } from '@/hooks/useSiteContent';
+import { pick } from '@/lib/api/content';
+
 export default function AboutPage() {
   const { t, locale } = useLang();
+  const { content, loading } = useSiteContent('about_page');
 
   const breadcrumbs = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.about'), href: '/about' }
   ];
 
+  // Helper to get dynamic value or fallback to translation
+  const get = (key: string, fallbackKey: string) => {
+    return pick(content, key, locale) || t(fallbackKey);
+  };
+
   const features = [
     {
       icon: BookOpen,
-      title: t('about.whoWeAre.title'),
-      description: t('about.whoWeAre.description'),
+      title: get('whoWeAreTitle', 'about.whoWeAre.title'),
+      description: get('whoWeAreDescription', 'about.whoWeAre.description'),
       accent: 'teal',
     },
     {
       icon: GraduationCap,
-      title: t('about.whatWeOffer.title'),
-      description: t('about.whatWeOffer.description'),
+      title: get('whatWeOfferTitle', 'about.whatWeOffer.title'),
+      description: get('whatWeOfferDescription', 'about.whatWeOffer.description'),
       accent: 'amber',
     },
   ];
 
-  const values = [
-    { icon: Cross, label: locale === 'ar' ? 'إيمان أرثوذكسي' : 'Orthodox Faith' },
-    { icon: BookOpen, label: locale === 'ar' ? 'دراسة كتابية' : 'Bible Study' },
-    { icon: Users, label: locale === 'ar' ? 'مجتمع متنامي' : 'Growing Community' },
-    { icon: Heart, label: locale === 'ar' ? 'حب ورعاية' : 'Love & Care' },
-    { icon: GraduationCap, label: locale === 'ar' ? 'تعليم منهجي' : 'Structured Learning' },
-    { icon: Sparkles, label: locale === 'ar' ? 'تجربة فريدة' : 'Unique Experience' },
+  const defaultValues = [
+    { icon: 'Cross', labelAr: 'إيمان أرثوذكسي', labelEn: 'Orthodox Faith' },
+    { icon: 'BookOpen', labelAr: 'دراسة كتابية', labelEn: 'Bible Study' },
+    { icon: 'Users', labelAr: 'مجتمع متنامي', labelEn: 'Growing Community' },
+    { icon: 'Heart', labelAr: 'حب ورعاية', labelEn: 'Love & Care' },
+    { icon: 'GraduationCap', labelAr: 'تعليم منهجي', labelEn: 'Structured Learning' },
+    { icon: 'Sparkles', labelAr: 'تجربة فريدة', labelEn: 'Unique Experience' },
   ];
+
+  let valuesData = defaultValues;
+  try {
+    const rawValues = content['values']?.[locale] || JSON.stringify(defaultValues);
+    valuesData = JSON.parse(rawValues);
+  } catch (e) {
+    valuesData = defaultValues;
+  }
+
+  const iconMap: any = { BookOpen, Users, GraduationCap, Heart, Cross, Sparkles };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <>
       <PageHero 
-        title={t('about.heading')} 
-        subtitle={t('about.whoWeAre.description')}
+        title={get('heading', 'about.heading')} 
+        subtitle={get('subheading', 'about.whoWeAre.description')}
         breadcrumbs={breadcrumbs} 
       />
 
@@ -92,28 +113,34 @@ export default function AboutPage() {
           {/* Section Title */}
           <div className="text-center mb-16">
             <span className="inline-block text-xs font-black text-teal-600 uppercase tracking-[0.3em] mb-4">
-              {locale === 'ar' ? 'قيمنا' : 'Our Values'}
+              {get('valuesEyebrow', 'common.values')}
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 mb-5">
-              {locale === 'ar' ? 'ما يميزنا' : 'What Sets Us Apart'}
+              {get('valuesHeading', 'common.whatSetsUsApart')}
             </h2>
             <div className="h-1 w-16 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full mx-auto" />
           </div>
 
           {/* Values Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 lg:gap-8">
-            {values.map((value, idx) => {
-              const Icon = value.icon;
+            {valuesData.map((value: any, idx: number) => {
+              const isUrl = value.icon && (value.icon.startsWith('http') || value.icon.startsWith('/'));
+              const Icon = !isUrl ? (iconMap[value.icon] || Sparkles) : null;
+              
               return (
                 <div 
                   key={idx}
                   className="group relative bg-white rounded-2xl p-8 border border-slate-100 text-center hover:border-teal-200 transition-all duration-400 hover:shadow-lg hover:-translate-y-1"
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100/50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="w-7 h-7 text-teal-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-50 to-teal-100/50 flex items-center justify-center mx-auto mb-5 group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    {isUrl ? (
+                      <img src={value.icon} alt="" className="w-10 h-10 object-contain" />
+                    ) : (
+                      Icon && <Icon className="w-7 h-7 text-teal-600" />
+                    )}
                   </div>
                   <h4 className="font-bold text-slate-800 text-lg">
-                    {value.label}
+                    {locale === 'ar' ? value.labelAr : value.labelEn}
                   </h4>
                 </div>
               );

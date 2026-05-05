@@ -4,39 +4,50 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getCurriculumBySlug } from '@/lib/data/curricula';
+import { DynamicCurriculum } from '@/lib/api/content';
 import { useLang } from '@/components/providers/LanguageProvider';
 import { PageHero } from '@/components/ui/PageHero';
-import { Clock, Users, BookOpen, ArrowLeft, ArrowRight, GraduationCap } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Clock, 
+  Users, 
+  BookOpen, 
+  GraduationCap 
+} from 'lucide-react';
 
-export default function CurriculumDetailClient({ slug }: { slug: string }) {
+export default function CurriculumDetailClient({ curriculum }: { curriculum: DynamicCurriculum }) {
   const { t, locale, dir } = useLang();
-  const curriculum = getCurriculumBySlug(slug);
   const BackArrow = dir === 'rtl' ? ArrowRight : ArrowLeft;
 
-  if (!curriculum) {
-    notFound();
-  }
+  const title = locale === 'ar' ? curriculum.titleAr : curriculum.titleEn;
+  const description = locale === 'ar' ? curriculum.descriptionAr : curriculum.descriptionEn;
+  const audience = locale === 'ar' ? curriculum.audienceAr : curriculum.audienceEn;
+  const duration = locale === 'ar' ? curriculum.durationAr : curriculum.durationEn;
+  const ageRange = locale === 'ar' ? curriculum.ageRangeAr : curriculum.ageRangeEn;
+  const fullContent = locale === 'ar' ? curriculum.fullContentAr : curriculum.fullContentEn;
 
   const breadcrumbs = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.curricula'), href: '/curricula' },
-    { label: curriculum.title[locale], href: `/curricula/${slug}` }
+    { label: title, href: `/curricula/${curriculum.slug}` }
   ];
 
-  const badgeSrc = `/assets/badges/${slug === 'bible-characters' ? '4ahed' : slug === 'biblical-concepts' ? 'amin' : slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
+  const badgeSrc = curriculum.badge && (curriculum.badge.startsWith('http') || curriculum.badge.startsWith('/'))
+    ? curriculum.badge 
+    : `/assets/badges/${curriculum.slug === 'bible-characters' ? '4ahed' : curriculum.slug === 'biblical-concepts' ? 'amin' : curriculum.slug === 'extended-study' ? 'kof2' : 'mo3lm'}.png`;
 
   const details = [
     {
       icon: Clock,
       label: t('curricula.duration', 'المدة'),
-      value: curriculum.duration[locale],
+      value: duration,
       color: 'amber',
     },
     {
       icon: Users,
       label: t('curricula.audience', 'الفئة المستهدفة'),
-      value: curriculum.audience[locale],
+      value: audience,
       color: 'teal',
     },
   ];
@@ -44,8 +55,8 @@ export default function CurriculumDetailClient({ slug }: { slug: string }) {
   return (
     <>
       <PageHero 
-        title={curriculum.title[locale]} 
-        subtitle={curriculum.description[locale]}
+        title={title} 
+        subtitle={description}
         breadcrumbs={breadcrumbs} 
       />
       
@@ -102,11 +113,16 @@ export default function CurriculumDetailClient({ slug }: { slug: string }) {
                   </h2>
                 </div>
                 <div className="prose prose-lg prose-slate max-w-none">
-                  <p className="text-slate-600 leading-[1.9] text-lg">
-                    {locale === 'ar' 
-                      ? "هذا نص تجريبي للمحتوى الدراسي. سيتم استبدال هذا النص لاحقاً بالتفاصيل الكاملة للمنهج، بما في ذلك الدروس الأسبوعية والمواضيع التعليمية لكل مرحلة. يهدف هذا الجزء إلى إعطاء فكرة عن شكل الصفحة وكيفية عرض النصوص الطويلة." 
-                      : "This is placeholder text for the curriculum content. This text will be replaced later with the full details of the curriculum, including weekly lessons and educational topics for each stage. This section aims to provide an idea of the page layout and how long text is displayed."}
-                  </p>
+                   {fullContent ? (
+                      <div 
+                        className="text-slate-600 leading-[1.9] text-lg whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: fullContent }}
+                      />
+                   ) : (
+                      <p className="text-slate-400 italic">
+                        {locale === 'ar' ? 'لا يوجد محتوى مفصل متاح حالياً.' : 'No detailed content available yet.'}
+                      </p>
+                   )}
                 </div>
               </div>
 
@@ -137,18 +153,19 @@ export default function CurriculumDetailClient({ slug }: { slug: string }) {
                   <div className="relative aspect-square p-10 flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-600/10 to-amber-600/10" />
                     <div className="relative w-full h-full">
-                      <Image 
+                      <img 
                         src={badgeSrc} 
-                        alt={curriculum.title[locale]}
-                        fill
-                        className="object-contain drop-shadow-2xl"
+                        alt={title}
+                        className="w-full h-full object-contain drop-shadow-2xl"
                       />
                     </div>
                   </div>
                   <div className="p-6 text-center border-t border-white/5">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10">
                       <GraduationCap className="w-4 h-4 text-amber-400" />
-                      <span className="text-sm font-bold text-white/80">{curriculum.badge}</span>
+                      <span className="text-sm font-bold text-white/80">
+                        {curriculum.badge && (curriculum.badge.startsWith('http') || curriculum.badge.startsWith('/')) ? (locale === 'ar' ? 'منهج' : 'Curriculum') : curriculum.badge}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -161,11 +178,11 @@ export default function CurriculumDetailClient({ slug }: { slug: string }) {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
                       <span className="text-sm text-slate-500 font-semibold">{locale === 'ar' ? 'الفئة العمرية' : 'Age Range'}</span>
-                      <span className="text-sm font-bold text-slate-900">{curriculum.ageRange[locale]}</span>
+                      <span className="text-sm font-bold text-slate-900">{ageRange}</span>
                     </div>
                     <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
                       <span className="text-sm text-slate-500 font-semibold">{locale === 'ar' ? 'المستوى' : 'Level'}</span>
-                      <span className="text-sm font-bold text-teal-600">{curriculum.badge}</span>
+                      <span className="text-sm font-bold text-teal-600">{curriculum.badge ? (locale === 'ar' ? 'منهج' : 'Curriculum') : curriculum.badge}</span>
                     </div>
                     <div className="flex items-center justify-between py-2.5">
                       <span className="text-sm text-slate-500 font-semibold">{locale === 'ar' ? 'الرقم' : 'Number'}</span>

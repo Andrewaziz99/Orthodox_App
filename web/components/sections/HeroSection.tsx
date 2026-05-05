@@ -8,17 +8,46 @@ import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { Badge, Button } from '../ui';
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import type { SectionContent } from '@/lib/api/content';
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  content?: SectionContent;
+}
+
+export default function HeroSection({ content = {} }: HeroSectionProps) {
   const { t, dir, locale } = useLang();
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const containerRef = useRef<HTMLElement>(null);
 
-  const stats = [
-    { value: t('hero.stats.curricula.value'), label: t('hero.stats.curricula.label') },
-    { value: t('hero.stats.audiences.value'), label: t('hero.stats.audiences.label') },
-    { value: t('hero.stats.years.value'),     label: t('hero.stats.years.label') },
-  ];
+  // Helper: prefer DB value, fall back to locale JSON
+  const c = (key: string, fallback: string) =>
+    content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar || fallback;
+
+  // Stats: try to parse JSON from DB, fall back to locale
+  let stats: { value: string; label: string }[];
+  try {
+    const raw = content['stats']?.[locale as 'ar' | 'en'] || content['stats']?.ar;
+    const parsed = raw ? JSON.parse(raw) : null;
+    stats = parsed
+      ? [
+          { value: parsed.curricula?.value, label: parsed.curricula?.label },
+          { value: parsed.audiences?.value, label: parsed.audiences?.label },
+          { value: parsed.years?.value,     label: parsed.years?.label },
+        ]
+      : [
+          { value: t('hero.stats.curricula.value'), label: t('hero.stats.curricula.label') },
+          { value: t('hero.stats.audiences.value'), label: t('hero.stats.audiences.label') },
+          { value: t('hero.stats.years.value'),     label: t('hero.stats.years.label') },
+        ];
+  } catch {
+    stats = [
+      { value: t('hero.stats.curricula.value'), label: t('hero.stats.curricula.label') },
+      { value: t('hero.stats.audiences.value'), label: t('hero.stats.audiences.label') },
+      { value: t('hero.stats.years.value'),     label: t('hero.stats.years.label') },
+    ];
+  }
+
+  const heroImage = c('image', '/assets/hero_mockup.png');
 
   // GSAP Hero entrance timeline
   useGSAP(() => {
@@ -69,19 +98,19 @@ export default function HeroSection() {
               variant="primary" 
               className="hero-badge mb-6 py-2 px-5 text-sm uppercase tracking-[0.2em] font-black"
             >
-              {t('hero.badge')}
+              {c('badge', t('hero.badge'))}
             </Badge>
 
             <h1 className="hero-heading text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.15] tracking-tight text-slate-900 mb-6">
-              {t('hero.heading')}
+              {c('heading', t('hero.heading'))}
               <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-teal-500 to-amber-600 text-shimmer">
-                {t('hero.headingHighlight')}
+                {c('headingHighlight', t('hero.headingHighlight'))}
               </span>
             </h1>
 
             <p className="hero-subtitle text-lg md:text-xl text-slate-600 leading-relaxed max-w-xl mb-10 font-medium">
-              {t('hero.subtitle')}
+              {c('subtitle', t('hero.subtitle'))}
             </p>
 
             <div className="hero-cta flex flex-wrap gap-4 mb-14">
@@ -93,7 +122,7 @@ export default function HeroSection() {
                 iconPosition="end"
                 className="px-10 shadow-lg shadow-teal-900/10 btn-interactive"
               >
-                {t('hero.cta.primary')}
+                {c('ctaPrimary', t('hero.cta.primary'))}
               </Button>
               <Button 
                 variant="outline" 
@@ -101,7 +130,7 @@ export default function HeroSection() {
                 href="#app"
                 className="px-10 border-slate-200 text-slate-700 hover:bg-slate-50 btn-interactive"
               >
-                {t('hero.cta.secondary')}
+                {c('ctaSecondary', t('hero.cta.secondary'))}
               </Button>
             </div>
 
@@ -129,7 +158,7 @@ export default function HeroSection() {
                
                <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20">
                   <Image 
-                    src="/assets/hero_mockup.png" 
+                    src={heroImage} 
                     alt="App Mockup"
                     fill
                     className="object-cover"
@@ -152,7 +181,7 @@ export default function HeroSection() {
       {/* Modern Scroll Indicator - Static side label */}
       <div className="hero-scroll-indicator absolute top-[70%] end-6 hidden md:flex flex-col items-center gap-4 cursor-pointer group z-20">
         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 group-hover:text-teal-600 transition-colors [writing-mode:vertical-lr]">
-          {t('hero.scrollIndicator')}
+          {c('scrollIndicator', t('hero.scrollIndicator'))}
         </span>
         <div className="w-5 h-8 rounded-full border-2 border-slate-200 flex justify-center p-1 group-hover:border-teal-400 transition-colors">
            <div className="w-1 h-2 bg-teal-500 rounded-full" />

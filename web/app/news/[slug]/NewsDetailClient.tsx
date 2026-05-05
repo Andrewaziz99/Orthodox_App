@@ -4,31 +4,35 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getNewsBySlug } from '@/lib/data/news';
+import { DynamicNewsArticle } from '@/lib/api/content';
 import { useLang } from '@/components/providers/LanguageProvider';
 import { PageHero } from '@/components/ui/PageHero';
 import { Calendar, User, ArrowLeft, ArrowRight } from 'lucide-react';
 
-export default function NewsDetailClient({ slug }: { slug: string }) {
+export default function NewsDetailClient({ article }: { article: DynamicNewsArticle }) {
   const { t, locale, dir } = useLang();
-  const article = getNewsBySlug(slug);
   const BackArrow = dir === 'rtl' ? ArrowRight : ArrowLeft;
+
+  const title = locale === 'ar' ? article.titleAr : article.titleEn;
+  const excerpt = locale === 'ar' ? article.excerptAr : article.excerptEn;
+  const category = locale === 'ar' ? article.categoryAr : article.categoryEn;
+  const body = locale === 'ar' ? article.bodyAr : article.bodyEn;
+
+  const breadcrumbs = [
+    { label: t('nav.home'), href: '/' },
+    { label: t('nav.news'), href: '/news' },
+    { label: category, href: '/news' }
+  ];
 
   if (!article) {
     notFound();
   }
 
-  const breadcrumbs = [
-    { label: t('nav.home'), href: '/' },
-    { label: t('nav.news'), href: '/news' },
-    { label: article.category[locale], href: '/news' }
-  ];
-
   return (
     <>
       <PageHero 
-        title={article.title[locale]} 
-        subtitle={article.excerpt[locale]}
+        title={title} 
+        subtitle={excerpt}
         breadcrumbs={breadcrumbs} 
       />
       
@@ -48,12 +52,11 @@ export default function NewsDetailClient({ slug }: { slug: string }) {
 
           {/* Featured Image */}
           {article.image && (
-            <div className="relative aspect-[21/9] w-full rounded-3xl overflow-hidden mb-12 shadow-xl">
-               <Image 
+            <div className="relative aspect-[21/9] w-full rounded-3xl overflow-hidden mb-12 shadow-xl bg-slate-100">
+               <img 
                   src={article.image} 
-                  alt={article.title[locale]} 
-                  fill 
-                  className="object-cover" 
+                  alt={title} 
+                  className="w-full h-full object-cover" 
                />
                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 to-transparent" />
             </div>
@@ -62,7 +65,7 @@ export default function NewsDetailClient({ slug }: { slug: string }) {
           {/* Article Meta */}
           <div className="flex flex-wrap items-center gap-4 md:gap-6 mb-12 pb-8 border-b border-slate-100">
             <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-100">
-              {article.category[locale]}
+              {category}
             </span>
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
               <Calendar className="w-4 h-4 text-amber-500" />
@@ -78,9 +81,10 @@ export default function NewsDetailClient({ slug }: { slug: string }) {
 
           {/* Article Body */}
           <div className="prose prose-lg prose-slate max-w-none">
-            <p className="text-xl leading-[1.9] text-slate-700 font-medium mb-8">
-               {article.body[locale]}
-            </p>
+            <div 
+              className="text-xl leading-[1.9] text-slate-700 font-medium mb-8 whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: body }}
+            />
             
             {/* Decorative divider */}
             <div className="flex items-center gap-3 my-12">

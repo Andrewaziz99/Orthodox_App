@@ -11,7 +11,7 @@ import { getUser } from '@/lib/auth/session';
 import { getChurches } from '@/lib/api/churches';
 import { getUsers } from '@/lib/api/users';
 import AdminTopbar from '@/components/admin/AdminTopbar';
-import { Building2, Users, BookOpen, TrendingUp } from 'lucide-react';
+import { Building2, Users, BookOpen, TrendingUp, LayoutTemplate } from 'lucide-react';
 
 interface DashboardStats {
   totalChurches: number;
@@ -141,6 +141,14 @@ export default function AdminDashboardPage() {
             >
               <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
               <p className="text-sm font-medium text-gray-700">Add Church</p>
+            </button>
+
+            <button
+              onClick={() => router.push('/admin/content')}
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors"
+            >
+              <LayoutTemplate className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm font-medium text-gray-700">Content</p>
             </button>
             
             <button

@@ -1,11 +1,7 @@
-// app/page.tsx  ← This is the HOME PAGE
+// app/page.tsx  ← HOME PAGE (Async Server Component)
 //
-// In Next.js App Router:
-// • app/page.tsx        → yoursite.com/
-// • app/about/page.tsx  → yoursite.com/about
-// • app/curricula/page.tsx → yoursite.com/curricula
-//
-// This page is a SERVER COMPONENT by default (no "use client" at the top).
+// Fetches dynamic CMS content for each section at request time (ISR, 60s).
+// If the backend is unavailable the sections fall back to locale JSON strings.
 
 import HeroSection from "@/components/sections/HeroSection";
 import AboutSection from "@/components/sections/AboutSection";
@@ -16,19 +12,55 @@ import { VideosSection } from "@/components/sections/VideosSection";
 import { NewsSection } from "@/components/sections/NewsSection";
 import { VisionSection } from "@/components/sections/VisionSection";
 import { CTASection } from "@/components/sections/CTASection";
+import {
+  getSectionContent,
+  getNewsArticles,
+  getCurriculaList,
+  getVideos,
+} from "@/lib/api/content";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch all section content in parallel
+  const [
+    heroContent,
+    aboutContent,
+    audienceContent,
+    appContent,
+    videosContent,
+    visionContent,
+    ctaContent,
+    newsArticles,
+    curricula,
+    dynamicVideos,
+    newsSection,
+    curriculaSection,
+  ] = await Promise.all([
+    getSectionContent("hero"),
+    getSectionContent("about"),
+    getSectionContent("audience"),
+    getSectionContent("app"),
+    getSectionContent("videos"),
+    getSectionContent("vision"),
+    getSectionContent("cta"),
+    getNewsArticles(),
+    getCurriculaList(),
+    getVideos(),
+    getSectionContent("news"),
+    getSectionContent("curricula"),
+  ]);
+
   return (
     <>
-      <HeroSection />           {/* Section 1+2: Hero with CTA */}
-      <AboutSection />          {/* Section 3: من نحن / ماذا نقدم */}
-      <AudienceSection />       {/* Section 4: من نخدم */}
-      <CurriculaSection />      {/* Section 5: المناهج */}
-      <AppSection />            {/* Section 6: التطبيق */}
-      <VideosSection />
-      <NewsSection />
-      <VisionSection />
-      <CTASection />
+      <HeroSection content={heroContent} />
+      <AboutSection content={aboutContent} />
+      <AudienceSection content={audienceContent} />
+      <CurriculaSection content={curricula} sectionContent={curriculaSection} />
+      <AppSection content={appContent} />
+      <VideosSection content={videosContent} videos={dynamicVideos} />
+      <NewsSection content={newsArticles} sectionContent={newsSection} />
+      <VisionSection content={visionContent} />
+      <CTASection content={ctaContent} />
     </>
   );
 }
+

@@ -7,11 +7,20 @@ import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { Button } from '../ui';
 import { Mail, ArrowRight, ArrowLeft } from 'lucide-react';
+import type { SectionContent } from '@/lib/api/content';
 
-export const CTASection = () => {
-  const { t, dir } = useLang();
+interface CTASectionProps {
+  content?: SectionContent;
+}
+
+export const CTASection = ({ content = {} }: CTASectionProps) => {
+  const { t, dir, locale } = useLang();
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Helper: prefer DB value, fall back to locale JSON
+  const c = (key: string, fallback: string) =>
+    content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar || fallback;
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
@@ -41,10 +50,10 @@ export const CTASection = () => {
           
           <div className="cta-content relative z-10 max-w-2xl">
             <h2 className="text-3xl md:text-5xl font-black text-white mb-6 leading-[1.1]">
-              {t('cta.heading')}
+              {c('heading', t('cta.heading'))}
             </h2>
             <p className="text-slate-400 text-lg md:text-xl mb-12 leading-relaxed">
-              {t('cta.description')}
+              {c('description', t('cta.description'))}
             </p>
 
             <div className="flex flex-wrap gap-5">
@@ -56,7 +65,7 @@ export const CTASection = () => {
                 icon={<ArrowIcon className="w-5 h-5" />}
                 iconPosition="end"
               >
-                {t('cta.primaryButton')}
+                {c('primaryButton', t('cta.primaryButton'))}
               </Button>
               <Button 
                 variant="outline" 
@@ -64,7 +73,7 @@ export const CTASection = () => {
                 href="/contact#demo"
                 className="text-white border-slate-700 hover:bg-slate-800 btn-interactive"
               >
-                {t('cta.secondaryButton')}
+                {c('secondaryButton', t('cta.secondaryButton'))}
               </Button>
             </div>
           </div>

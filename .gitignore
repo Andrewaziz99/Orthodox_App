@@ -1,5 +1,6 @@
 APP_DOCUMENTATION.md
 .vscode
+/node_modules
 /web/node_modules
 /backend/node_modules
 .opencode

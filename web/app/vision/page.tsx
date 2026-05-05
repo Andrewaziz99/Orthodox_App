@@ -5,50 +5,76 @@ import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { Target, Eye, Compass, TrendingUp, Lightbulb, Globe } from 'lucide-react';
 
+import { useSiteContent } from '@/hooks/useSiteContent';
+import { pick } from '@/lib/api/content';
+
 export default function VisionPage() {
   const { t, locale } = useLang();
+  const { content, loading } = useSiteContent('vision_page');
 
   const breadcrumbs = [
     { label: t('nav.home'), href: '/' },
     { label: t('nav.vision'), href: '/vision' }
   ];
 
-  const milestones = [
+  const get = (key: string, fallbackKey?: string, defaultVal: string = '') => {
+    return pick(content, key, locale) || (fallbackKey ? t(fallbackKey) : defaultVal);
+  };
+
+  const defaultMilestones = [
     {
       year: '2024',
-      title: locale === 'ar' ? 'إطلاق المنهج الأول' : 'First Curriculum Launch',
-      description: locale === 'ar' ? 'إنطلاق أول منهج للدراسة الكتابية للأطفال مع مواد تعليمية متكاملة' : 'Launch of the first Bible study curriculum for children with comprehensive educational materials',
-      icon: Lightbulb,
+      titleAr: 'إطلاق المنهج الأول',
+      titleEn: 'First Curriculum Launch',
+      descriptionAr: 'إنطلاق أول منهج للدراسة الكتابية للأطفال مع مواد تعليمية متكاملة',
+      descriptionEn: 'Launch of the first Bible study curriculum for children with comprehensive educational materials',
+      icon: 'Lightbulb',
       color: 'teal',
     },
     {
       year: '2025',
-      title: locale === 'ar' ? 'التوسع الرقمي' : 'Digital Expansion',
-      description: locale === 'ar' ? 'إطلاق المنصة الرقمية والتطبيق الذكي لتسهيل الوصول للمحتوى التعليمي' : 'Launch of the digital platform and smart app for easier access to educational content',
-      icon: Globe,
+      titleAr: 'التوسع الرقمي',
+      titleEn: 'Digital Expansion',
+      descriptionAr: 'إطلاق المنصة الرقمية والتطبيق الذكي لتسهيل الوصول للمحتوى التعليمي',
+      descriptionEn: 'Launch of the digital platform and smart app for easier access to educational content',
+      icon: 'Globe',
       color: 'amber',
     },
     {
       year: '2026',
-      title: locale === 'ar' ? 'مناهج متعددة' : 'Multiple Curricula',
-      description: locale === 'ar' ? 'إضافة مناهج جديدة تغطي فئات عمرية مختلفة ومواضيع كتابية متنوعة' : 'Adding new curricula covering different age groups and diverse biblical topics',
-      icon: TrendingUp,
+      titleAr: 'مناهج متعددة',
+      titleEn: 'Multiple Curricula',
+      descriptionAr: 'إضافة مناهج جديدة تغطي فئات عمرية مختلفة ومواضيع كتابية متنوعة',
+      descriptionEn: 'Adding new curricula covering different age groups and diverse biblical topics',
+      icon: 'TrendingUp',
       color: 'teal',
     },
     {
       year: '2027+',
-      title: locale === 'ar' ? 'التأثير العالمي' : 'Global Impact',
-      description: locale === 'ar' ? 'الوصول لأكبر عدد من الأطفال والأسر في مختلف أنحاء العالم' : 'Reaching the maximum number of children and families worldwide',
-      icon: Compass,
+      titleAr: 'التأثير العالمي',
+      titleEn: 'Global Impact',
+      descriptionAr: 'الوصول لأكبر عدد من الأطفال والأسر في مختلف أنحاء العالم',
+      descriptionEn: 'Reaching the maximum number of children and families worldwide',
+      icon: 'Compass',
       color: 'amber',
     },
   ];
 
+  let milestonesData = defaultMilestones;
+  try {
+    const rawMilestones = content['milestones']?.[locale];
+    if (rawMilestones) milestonesData = JSON.parse(rawMilestones);
+  } catch (e) {}
+
+  const iconMap: any = { Target, Eye, Compass, TrendingUp, Lightbulb, Globe };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
+
   return (
     <>
       <PageHero 
-        title={t('vision.heading')} 
-        subtitle={t('vision.description')}
+        title={get('heading', 'vision.heading')} 
+        subtitle={get('description', 'vision.description')}
         breadcrumbs={breadcrumbs} 
       />
 
@@ -67,14 +93,14 @@ export default function VisionPage() {
               </div>
             </div>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-8">
-              {locale === 'ar' 
+              {get('visionHeading', undefined, locale === 'ar' 
                 ? 'نبني جيلاً يعرف الكتاب المقدس ويحيا بتعاليمه' 
-                : 'Building a Generation That Knows the Bible and Lives by Its Teachings'}
+                : 'Building a Generation That Knows the Bible and Lives by Its Teachings')}
             </h2>
             <p className="text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
-              {locale === 'ar'
+              {get('visionText', undefined, locale === 'ar'
                 ? 'رؤيتنا هي تقديم تعليم كتابي أرثوذكسي متميز يصل لكل طفل، من خلال مناهج حديثة ومنصة رقمية متطورة تجعل دراسة الكتاب المقدس تجربة ممتعة ومثمرة.'
-                : 'Our vision is to provide outstanding Orthodox biblical education that reaches every child, through modern curricula and an advanced digital platform that makes Bible study an enjoyable and fruitful experience.'}
+                : 'Our vision is to provide outstanding Orthodox biblical education that reaches every child, through modern curricula and an advanced digital platform that makes Bible study an enjoyable and fruitful experience.')}
             </p>
           </div>
         </div>
@@ -86,10 +112,10 @@ export default function VisionPage() {
           {/* Section Header */}
           <div className="text-center mb-16 md:mb-20">
             <span className="inline-block text-xs font-black text-teal-600 uppercase tracking-[0.3em] mb-4">
-              {locale === 'ar' ? 'خطة العمل' : 'Our Roadmap'}
+              {get('roadmapEyebrow', undefined, locale === 'ar' ? 'خطة العمل' : 'Our Roadmap')}
             </span>
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-5">
-              {locale === 'ar' ? 'مسيرة التطوير' : 'Development Journey'}
+              {get('roadmapHeading', undefined, locale === 'ar' ? 'مسيرة التطوير' : 'Development Journey')}
             </h2>
             <div className="h-1 w-16 bg-gradient-to-r from-amber-400 to-amber-500 rounded-full mx-auto" />
           </div>
@@ -100,17 +126,24 @@ export default function VisionPage() {
             <div className="absolute top-0 bottom-0 start-8 md:start-1/2 w-px bg-gradient-to-b from-teal-200 via-amber-200 to-teal-200 -translate-x-1/2" />
 
             <div className="space-y-12 md:space-y-16">
-              {milestones.map((milestone, idx) => {
-                const Icon = milestone.icon;
+              {milestonesData.map((milestone: any, idx: number) => {
+                const isUrl = milestone.icon && (milestone.icon.startsWith('http') || milestone.icon.startsWith('/'));
+                const Icon = !isUrl ? (iconMap[milestone.icon] || Lightbulb) : null;
                 const isEven = idx % 2 === 0;
-                const isTeal = milestone.color === 'teal';
+                const isTeal = isEven; // Automatically alternate colors: Teal for even, Amber for odd
+                const title = locale === 'ar' ? milestone.titleAr : milestone.titleEn;
+                const description = locale === 'ar' ? milestone.descriptionAr : milestone.descriptionEn;
 
                 return (
                   <div key={idx} className={`relative flex items-start gap-8 md:gap-0 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                     {/* Timeline Dot */}
                     <div className="absolute start-8 md:start-1/2 -translate-x-1/2 z-10">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg ${isTeal ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-amber-500/20'}`}>
-                        <Icon className="w-5 h-5 text-white" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden ${isTeal ? 'bg-gradient-to-br from-teal-500 to-teal-600 shadow-teal-500/20' : 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-amber-500/20'}`}>
+                        {isUrl ? (
+                          <img src={milestone.icon} alt="" className="w-7 h-7 object-contain" />
+                        ) : (
+                          Icon && <Icon className="w-5 h-5 text-white" />
+                        )}
                       </div>
                     </div>
 
@@ -121,10 +154,10 @@ export default function VisionPage() {
                           {milestone.year}
                         </span>
                         <h3 className="text-xl font-black text-slate-900 mb-3 leading-tight">
-                          {milestone.title}
+                          {title}
                         </h3>
                         <p className="text-slate-600 leading-relaxed">
-                          {milestone.description}
+                          {description}
                         </p>
                       </div>
                     </div>

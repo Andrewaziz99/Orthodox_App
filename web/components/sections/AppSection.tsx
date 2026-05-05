@@ -20,11 +20,54 @@ import {
   Smartphone
 } from 'lucide-react';
 import { appFeatures } from '@/lib/data/features';
+import type { SectionContent } from '@/lib/api/content';
 
-export default function AppSection() {
+interface AppSectionProps {
+  content?: SectionContent;
+}
+
+export default function AppSection({ content = {} }: AppSectionProps) {
   const { t, dir, locale } = useLang();
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Helper: prefer DB value, fall back to locale JSON
+  const c = (key: string, fallback: string) =>
+    content[key]?.[locale as 'ar' | 'en'] || content[key]?.ar || fallback;
+
+  // Helper: parse JSON from DB
+  let dbFeatures: any = null;
+  try {
+    const raw = content['features']?.[locale as 'ar' | 'en'] || content['features']?.ar;
+    if (raw) dbFeatures = JSON.parse(raw);
+  } catch {
+    // Ignore parse error
+  }
+
+  // Use appFeatures as the base structure, override labels if DB has them
+  const features = appFeatures.map((baseFeature) => {
+    // If DB has an array, we try to match by ID or index. 
+    // If DB is an object (from seeded JSON), we look up by ID.
+    let customLabel = null;
+    if (dbFeatures) {
+      if (Array.isArray(dbFeatures)) {
+        const match = dbFeatures.find((df: any) => df.id === baseFeature.id);
+        if (match && match.label) customLabel = match.label;
+      } else {
+        // Fallback for object dictionary (seeded from ar.json)
+        // Try to match the key (e.g. weeklyLessons -> lessons)
+        const possibleKeys = Object.keys(dbFeatures).filter(k => k.toLowerCase().includes(baseFeature.id) || baseFeature.id.includes(k.toLowerCase()));
+        if (possibleKeys.length > 0) {
+           customLabel = dbFeatures[possibleKeys[0]];
+        }
+      }
+    }
+    
+    return {
+      ...baseFeature,
+      label: customLabel || baseFeature.label
+    };
+  });
 
   const iconMap: Record<string, any> = {
     BookOpen, ClipboardCheck, Award, Trophy, BarChart3, Book, Bell, ShoppingBag
@@ -61,15 +104,15 @@ export default function AppSection() {
           {/* Content Side */}
           <div className="app-content">
             <Badge variant="secondary" className="mb-6 bg-teal-50 text-teal-700 border-teal-100 px-4 py-1.5 font-black uppercase tracking-widest text-[10px]">
-              {t('app.eyebrow')}
+              {c('eyebrow', t('app.eyebrow'))}
             </Badge>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 mb-8 leading-tight">
-              {t('app.heading')}
+              {c('heading', t('app.heading'))}
               <br />
-              <span className="text-teal-600">{t('app.headingHighlight')}</span>
+              <span className="text-teal-600">{c('headingHighlight', t('app.headingHighlight'))}</span>
             </h2>
             <p className="text-xl text-slate-600 leading-relaxed mb-12 font-medium">
-              {t('app.description')}
+              {c('description', t('app.description'))}
             </p>
 
             <div className="flex flex-wrap gap-5">
@@ -81,7 +124,7 @@ export default function AppSection() {
                 iconPosition="end"
                 className="btn-interactive"
               >
-                {t('app.cta')}
+                {c('cta', t('app.cta'))}
               </Button>
               <div className="flex -space-x-3 rtl:space-x-reverse">
                  {[1,2,3,4].map(i => (
@@ -100,11 +143,12 @@ export default function AppSection() {
           <div className="relative">
              {/* Feature Grid with perspective hint */}
              <div className="app-features-grid grid grid-cols-2 gap-5 relative z-10">
-                {appFeatures.map((f, idx) => {
+                {features.map((f: any, idx: number) => {
                   const Icon = iconMap[f.icon] || Smartphone;
+                  const label = f.label?.[locale] || f.label || '';
                   return (
                     <Card 
-                      key={f.id}
+                      key={f.id || idx}
                       variant="default"
                       hoverEffect="lift"
                       className="app-feature-card p-6 border-slate-200/60 bg-white/80 backdrop-blur-sm flex items-center gap-4 group card-hoverable"
@@ -113,7 +157,7 @@ export default function AppSection() {
                         <Icon className="w-6 h-6" />
                       </div>
                       <span className="text-sm font-black text-slate-800 leading-tight">
-                        {f.label[locale]}
+                        {label}
                       </span>
                     </Card>
                   );

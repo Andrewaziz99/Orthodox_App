@@ -14,6 +14,7 @@ import {
   Users,
   BookOpen,
   LogOut,
+  LayoutTemplate,
 } from 'lucide-react';
 
 interface NavItem {
@@ -44,6 +45,11 @@ const navItems: NavItem[] = [
     href: '/admin/curricula',
     label: 'Curricula',
     icon: BookOpen,
+  },
+  {
+    href: '/admin/content',
+    label: 'Content CMS',
+    icon: LayoutTemplate,
   },
 ];
 
