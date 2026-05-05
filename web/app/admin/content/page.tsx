@@ -152,7 +152,7 @@ export default function ContentAdminPage() {
       </div>
 
       {/* Editor Area */}
-      <div className="max-w-5xl mx-auto pt-8 pb-24 px-4">
+      <div className="w-full pt-8 pb-24 px-8">
          {activeSection === 'videos' ? (
            <VideoManager />
          ) : activeSection === 'curricula_home' ? (

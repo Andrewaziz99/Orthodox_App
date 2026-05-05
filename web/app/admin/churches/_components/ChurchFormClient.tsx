@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { createChurch, getChurch, updateChurch } from '@/lib/api/churches';
+import { createChurch, getChurch, updateChurch, type CreateChurchRequest, type UpdateChurchRequest } from '@/lib/api/churches';
 import { handleApiError } from '@/lib/api/client';
 import { useRequireSuperAdmin } from '@/lib/auth/middleware';
 import AdminTopbar from '@/components/admin/AdminTopbar';
@@ -80,7 +80,7 @@ export default function ChurchForm({ mode }: { mode: 'new' | 'edit' }) {
 
     setLoading(true);
 
-    const payload = {
+    const payload: CreateChurchRequest | UpdateChurchRequest = {
       name: form.name.trim(),
       location: form.location.trim() || undefined,
       address: form.address.trim() || undefined,
@@ -120,7 +120,7 @@ export default function ChurchForm({ mode }: { mode: 'new' | 'edit' }) {
     <>
       <AdminTopbar title={isEdit ? 'Edit Church' : 'New Church'} />
 
-      <div className="p-6 max-w-2xl">
+      <div className="w-full p-6">
         <button
           onClick={() => router.push('/admin/churches')}
           className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6"

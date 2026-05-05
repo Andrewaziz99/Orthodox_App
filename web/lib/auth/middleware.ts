@@ -23,7 +23,7 @@ export function useRequireAdmin() {
   useEffect(() => {
     if (!isAuthenticated()) {
       const from = typeof window !== 'undefined' ? window.location.pathname : '/';
-      router.push(`/login?from=${encodeURIComponent(from)}`);
+      router.push(`/auth/login?from=${encodeURIComponent(from)}`);
       return;
     }
 

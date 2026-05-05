@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { createUser, getUser, updateUser } from '@/lib/api/users';
+import { createUser, getUser, updateUser, type CreateUserRequest, type UpdateUserRequest } from '@/lib/api/users';
 import { getAllChurches, type Church } from '@/lib/api/churches';
 import { handleApiError } from '@/lib/api/client';
 import { useRequireAdmin } from '@/lib/auth/middleware';
@@ -111,13 +111,13 @@ export default function UserForm({ mode }: { mode: 'new' | 'edit' }) {
 
     setLoading(true);
 
-    const payload: any = {
+    const payload: CreateUserRequest | UpdateUserRequest = {
       name: form.name.trim(),
       role: form.role,
-      ...(form.email && { email: form.email.trim() }),
-      ...(form.phone && { phone: form.phone.trim() }),
-      ...(form.churchId && { churchId: form.churchId }),
-      ...(form.password && { password: form.password }),
+      ...(form.email.trim() && { email: form.email.trim() }),
+      ...(form.phone.trim() && { phone: form.phone.trim() }),
+      ...(form.churchId.trim() && { churchId: form.churchId.trim() }),
+      ...(form.password.trim() && { password: form.password.trim() }),
     };
 
     try {
@@ -152,7 +152,7 @@ export default function UserForm({ mode }: { mode: 'new' | 'edit' }) {
     <>
       <AdminTopbar title={isEdit ? 'Edit User' : 'New User'} />
 
-      <div className="p-6 max-w-2xl">
+      <div className="w-full p-6">
         <button
           onClick={() => router.push('/admin/users')}
           className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6"
