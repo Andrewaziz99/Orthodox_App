@@ -1,6 +1,7 @@
 /**
  * Next.js Middleware
  * Server-side route protection — runs on every request before rendering.
+ * Place this file at: web/middleware.ts (project root, next to package.json)
  */
 
 import { NextResponse } from 'next/server';
@@ -10,7 +11,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_PREFIXES = ['/admin'];
 
 // Routes accessible only when NOT logged in
-const AUTH_ONLY_ROUTES = ['/auth/login'];
+const AUTH_ONLY_ROUTES = ['/login'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,7 +26,7 @@ export function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users away from protected routes
   if (isProtected && !token) {
-    const loginUrl = new URL('/auth/login', request.url);
+    const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('from', pathname); // preserve intended destination
     return NextResponse.redirect(loginUrl);
   }
@@ -40,5 +41,5 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Run middleware on admin and auth routes only
-  matcher: ['/admin/:path*', '/auth/login'],
+  matcher: ['/admin/:path*', '/login'],
 };

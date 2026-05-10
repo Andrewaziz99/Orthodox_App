@@ -5,7 +5,7 @@
 
 import { getToken } from '../auth/session';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
 
 export class ApiError extends Error {
   constructor(
@@ -31,7 +31,7 @@ async function request<T>(
 ): Promise<T> {
   const { requiresAuth = true, headers = {}, ...restOptions } = options;
 
-  const requestHeaders: any = {
+  const requestHeaders: HeadersInit = {
     'Content-Type': 'application/json',
     ...headers,
   };
@@ -49,7 +49,7 @@ async function request<T>(
   try {
     const response = await fetch(url, {
       ...restOptions,
-      headers: requestHeaders as HeadersInit,
+      headers: requestHeaders,
     });
 
     // Handle non-OK responses

@@ -12,8 +12,14 @@ interface SmoothScrollProviderProps {
 
 export default function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   const lenisRef = useRef<Lenis | null>(null);
+  const pathname = usePathname();
+  const isNativeScrollRoute = pathname.startsWith('/admin') || pathname.startsWith('/auth');
 
   useEffect(() => {
+    if (isNativeScrollRoute) {
+      return;
+    }
+
     // Initialize Lenis
     const lenis = new Lenis({
       duration: 1.2,
@@ -47,13 +53,16 @@ export default function SmoothScrollProvider({ children }: SmoothScrollProviderP
       gsap.ticker.remove(onUpdate);
       (window as any).lenis = undefined;
     };
-  }, []);
+  }, [isNativeScrollRoute]);
 
-  const pathname = usePathname();
   useEffect(() => {
+    if (isNativeScrollRoute) {
+      return;
+    }
+
     // Refreshing ScrollTrigger ensures the new offsets are correctly calculated for the new page layout
     ScrollTrigger.refresh();
-  }, [pathname]);
+  }, [pathname, isNativeScrollRoute]);
 
   return <>{children}</>;
 }

@@ -1,369 +1,216 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getUsers, deleteUser, type User } from '@/lib/api/users';
+import { handleApiError } from '@/lib/api/client';
+import { useRequireAdmin } from '@/lib/auth/middleware';
 import AdminTopbar from '@/components/admin/AdminTopbar';
-import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import {
-  bulkActivateUsers,
-  bulkDeleteUsers,
-  deleteUser,
-  getUsers,
-  updateUser,
-  type User,
-} from '@/lib/api/users';
-import { ChevronLeft, ChevronRight, PlusCircle, Search, Users as UsersIcon } from 'lucide-react';
+import { ToastContainer, useToast } from '@/components/admin/Toast';
+import { Plus, Users as UsersIcon, Pencil, Trash2, Loader2 } from 'lucide-react';
 
-const PAGE_SIZE = 10;
+type RoleFilter = 'all' | 'super_admin' | 'church_admin' | 'servant' | 'child';
 
-type ConfirmState =
-  | { kind: 'delete-one'; ids: string[]; title: string; description: string; confirmText: string; variant: 'danger' }
-  | { kind: 'activate-one'; ids: string[]; title: string; description: string; confirmText: string; variant: 'success' }
-  | { kind: 'suspend-one'; ids: string[]; title: string; description: string; confirmText: string; variant: 'danger' }
-  | { kind: 'bulk-delete'; ids: string[]; title: string; description: string; confirmText: string; variant: 'danger' }
-  | { kind: 'bulk-activate'; ids: string[]; title: string; description: string; confirmText: string; variant: 'success' }
-  | null;
+const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'مشرف عام', church_admin: 'مشرف كنيسة', servant: 'خادم', child: 'طفل',
+};
+const ROLE_COLORS: Record<string, string> = {
+  super_admin: 'bg-purple-100 text-purple-800',
+  church_admin: 'bg-blue-100 text-blue-800',
+  servant: 'bg-green-100 text-green-800',
+  child: 'bg-gray-100 text-gray-700',
+};
+const STATUS_COLORS: Record<string, string> = {
+  active: 'bg-green-100 text-green-700',
+  inactive: 'bg-gray-100 text-gray-600',
+  suspended: 'bg-red-100 text-red-700',
+};
+const STATUS_LABELS: Record<string, string> = {
+  active: 'نشط', inactive: 'غير نشط', suspended: 'موقوف',
+};
 
-export default function UsersListPage() {
+export default function UsersPage() {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
-  const [meta, setMeta] = useState({ total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1, hasNextPage: false, hasPreviousPage: false });
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
-  const [working, setWorking] = useState(false);
+  useRequireAdmin();
 
-  useEffect(() => {
-    setSelectedIds([]);
-    const load = async () => {
-      setLoading(true);
-      try {
-        const response = await getUsers({ page, limit: PAGE_SIZE, search: query });
-        setUsers(response.data);
-        setMeta(response.meta);
-      } catch (error) {
-        console.error('Failed to load users', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const toast = useToast();
+  const [users, setUsers]       = useState<User[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [busy, setBusy]         = useState<string | null>(null);
+  const [filter, setFilter]     = useState<RoleFilter>('all');
+  const [confirmDelete, setConfirmDelete] = useState<User | null>(null);
 
-    load();
-  }, [page, query]);
-
-  const selectedCount = selectedIds.length;
-  const allCurrentSelected = useMemo(
-    () => users.length > 0 && users.every((user) => selectedIds.includes(user.id)),
-    [users, selectedIds],
-  );
-
-  const toggleSelected = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((selectedId) => selectedId !== id) : [...prev, id],
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (allCurrentSelected) {
-      setSelectedIds([]);
-      return;
-    }
-
-    setSelectedIds(users.map((user) => user.id));
-  };
-
-  const refreshCurrentPage = async () => {
-    const response = await getUsers({ page, limit: PAGE_SIZE, search: query });
-    setUsers(response.data);
-    setMeta(response.meta);
-    setSelectedIds([]);
-  };
-
-  const openConfirm = (state: ConfirmState) => setConfirmState(state);
-
-  const runConfirmAction = async () => {
-    if (!confirmState) return;
-
-    setWorking(true);
+  const load = async () => {
     try {
-      switch (confirmState.kind) {
-        case 'delete-one':
-          await deleteUser(confirmState.ids[0]);
-          break;
-        case 'activate-one':
-          await updateUser(confirmState.ids[0], { status: 'active' });
-          break;
-        case 'suspend-one':
-          await updateUser(confirmState.ids[0], { status: 'suspended' });
-          break;
-        case 'bulk-delete':
-          await bulkDeleteUsers(confirmState.ids);
-          break;
-        case 'bulk-activate':
-          await bulkActivateUsers(confirmState.ids);
-          break;
-      }
-
-      await refreshCurrentPage();
-    } catch (error) {
-      console.error('User action failed', error);
-      alert('Action failed. Please try again.');
+      setUsers(await getUsers());
+    } catch (err) {
+      toast.error(handleApiError(err));
     } finally {
-      setWorking(false);
-      setConfirmState(null);
+      setLoading(false);
     }
   };
 
-  const statusBadge = (status: User['status']) => {
-    const classes =
-      status === 'active'
-        ? 'bg-green-100 text-green-700'
-        : status === 'inactive'
-          ? 'bg-gray-100 text-gray-700'
-          : 'bg-red-100 text-red-700';
+  useEffect(() => { load(); }, []);
 
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${classes}`}>{status}</span>;
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setBusy(confirmDelete.id);
+    setConfirmDelete(null);
+    try {
+      await deleteUser(confirmDelete.id);
+      await load();
+      toast.success(`تم حذف المستخدم "${confirmDelete.name}" بنجاح`);
+    } catch (err) {
+      toast.error(handleApiError(err));
+    } finally { setBusy(null); }
   };
+
+  const filtered = filter === 'all' ? users : users.filter(u => u.role === filter);
+
+  const counts: Record<string, number> = {
+    all: users.length,
+    super_admin: users.filter(u => u.role === 'super_admin').length,
+    church_admin: users.filter(u => u.role === 'church_admin').length,
+    servant: users.filter(u => u.role === 'servant').length,
+    child: users.filter(u => u.role === 'child').length,
+  };
+
+  const filterTabs = [
+    { key: 'all',          label: 'الكل'          },
+    { key: 'super_admin',  label: 'مشرفون عامون'  },
+    { key: 'church_admin', label: 'مشرفو كنائس'   },
+    { key: 'servant',      label: 'خدام'           },
+    { key: 'child',        label: 'أطفال'          },
+  ] as const;
 
   return (
     <>
-      <AdminTopbar title="Users" />
+      <ToastContainer toasts={toast.toasts} onRemove={toast.remove} />
+      <AdminTopbar title="إدارة المستخدمين" />
 
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="p-6" dir="rtl">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Users</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              {meta.total} total users{selectedCount > 0 ? ` • ${selectedCount} selected` : ''}
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">المستخدمون</h1>
+            <p className="text-gray-500 mt-1">إدارة جميع مستخدمي النظام</p>
           </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                value={query}
-                onChange={(e) => {
-                  setPage(1);
-                  setQuery(e.target.value);
-                }}
-                placeholder="Search users..."
-                className="w-full rounded-lg border border-gray-300 bg-white px-10 py-2.5 text-sm outline-none focus:border-blue-500 sm:w-72"
-              />
-            </div>
-
-            <button
-              onClick={() => router.push('/admin/users/new')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Add User
-            </button>
-          </div>
+          <button onClick={() => router.push('/admin/users/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />إضافة مستخدم
+          </button>
         </div>
 
-        {selectedCount > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-green-100 bg-green-50 px-4 py-3">
-            <p className="text-sm font-medium text-green-900">{selectedCount} selected</p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() =>
-                  openConfirm({
-                    kind: 'bulk-activate',
-                    ids: selectedIds,
-                    title: 'Activate selected users?',
-                    description: `This will activate ${selectedCount} user${selectedCount === 1 ? '' : 's'}.`,
-                    confirmText: 'Activate selected',
-                    variant: 'success',
-                  })
-                }
-                className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700"
-              >
-                Activate Selected
-              </button>
-              <button
-                onClick={() =>
-                  openConfirm({
-                    kind: 'bulk-delete',
-                    ids: selectedIds,
-                    title: 'Delete selected users?',
-                    description: `This will permanently delete ${selectedCount} user${selectedCount === 1 ? '' : 's'}.`,
-                    confirmText: 'Delete selected',
-                    variant: 'danger',
-                  })
-                }
-                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Delete Selected
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Filter tabs */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {filterTabs.map(t => (
+            <button key={t.key} onClick={() => setFilter(t.key)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                filter === t.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-300'
+              }`}
+            >
+              {t.label}
+              <span className={`mr-2 px-1.5 py-0.5 rounded-full text-xs ${
+                filter === t.key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
+              }`}>
+                {counts[t.key]}
+              </span>
+            </button>
+          ))}
+        </div>
 
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+        {loading ? (
+          <div className="bg-white rounded-2xl p-12 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+            <UsersIcon className="w-14 h-14 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 mb-4">لا يوجد مستخدمون</p>
+            <button onClick={() => router.push('/admin/users/new')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4" />إضافة مستخدم
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    <input
-                      type="checkbox"
-                      checked={allCurrentSelected}
-                      onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Actions</th>
+                  {['الاسم','التواصل','الدور','الحالة','تاريخ الإضافة','الإجراءات'].map(h => (
+                    <th key={h} className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">
-                      Loading users...
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(user => (
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-4 font-medium text-gray-900">{user.name}</td>
+                    <td className="px-5 py-4">
+                      <p className="text-sm text-gray-900">{user.phone || user.email || '—'}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_COLORS[user.role]}`}>
+                        {ROLE_LABELS[user.role] ?? user.role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[user.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                        {STATUS_LABELS[user.status] ?? user.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-sm text-gray-500">
+                      {new Date(user.createdAt).toLocaleDateString('ar-EG')}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2 justify-end">
+                        {busy === user.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                        ) : (
+                          <>
+                            <button onClick={() => router.push(`/admin/users/${user.id}`)}
+                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            ><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => setConfirmDelete(user)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            ><Trash2 className="w-4 h-4" /></button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-500">
-                      No users found.
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user) => (
-                    <tr key={user.id} className={selectedIds.includes(user.id) ? 'bg-green-50/60' : ''}>
-                      <td className="px-4 py-4 align-middle">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(user.id)}
-                          onChange={() => toggleSelected(user.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-4 py-4 align-middle">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600">
-                            <UsersIcon className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-xs text-gray-500">{user.phone || 'No phone'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 align-middle text-sm text-gray-700">{user.email || '—'}</td>
-                      <td className="px-4 py-4 align-middle text-sm text-gray-700 capitalize">{user.role.replace('_', ' ')}</td>
-                      <td className="px-4 py-4 align-middle">{statusBadge(user.status)}</td>
-                      <td className="px-4 py-4 align-middle">
-                        <div className="flex items-center justify-end gap-2 text-sm">
-                          {user.status !== 'active' ? (
-                            <button
-                              onClick={() =>
-                                openConfirm({
-                                  kind: 'activate-one',
-                                  ids: [user.id],
-                                  title: 'Activate user?',
-                                  description: `Activate ${user.name}?`,
-                                  confirmText: 'Activate',
-                                  variant: 'success',
-                                })
-                              }
-                              className="rounded-lg bg-green-50 px-3 py-2 font-medium text-green-700 hover:bg-green-100"
-                            >
-                              Activate
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() =>
-                                openConfirm({
-                                  kind: 'suspend-one',
-                                  ids: [user.id],
-                                  title: 'Suspend user?',
-                                  description: `Suspend ${user.name}?`,
-                                  confirmText: 'Suspend',
-                                  variant: 'danger',
-                                })
-                              }
-                              className="rounded-lg bg-yellow-50 px-3 py-2 font-medium text-yellow-700 hover:bg-yellow-100"
-                            >
-                              Suspend
-                            </button>
-                          )}
-                          <button
-                            onClick={() => router.push(`/admin/users/${user.id}`)}
-                            className="rounded-lg bg-blue-50 px-3 py-2 font-medium text-blue-700 hover:bg-blue-100"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() =>
-                              openConfirm({
-                                kind: 'delete-one',
-                                ids: [user.id],
-                                title: 'Delete user?',
-                                description: `Delete ${user.name}? This cannot be undone.`,
-                                confirmText: 'Delete',
-                                variant: 'danger',
-                              })
-                            }
-                            className="rounded-lg bg-gray-50 px-3 py-2 font-medium text-gray-700 hover:bg-gray-100"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
+        )}
+      </div>
 
-          <div className="flex flex-col gap-3 border-t border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-600">
-              Showing {meta.total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, meta.total)} of {meta.total}
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center px-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+            <div className="flex items-center justify-center w-14 h-14 bg-red-100 rounded-full mx-auto mb-4">
+              <Trash2 className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">تأكيد الحذف</h3>
+            <p className="text-gray-500 text-center text-sm mb-6">
+              هل أنت متأكد من حذف <strong>"{confirmDelete.name}"</strong>؟ لا يمكن التراجع عن هذا الإجراء.
             </p>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={!meta.hasPreviousPage || loading}
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Prev
-              </button>
-              <span className="min-w-10 text-center text-sm font-medium text-gray-700">
-                {page} / {meta.totalPages}
-              </span>
-              <button
-                disabled={!meta.hasNextPage || loading}
-                onClick={() => setPage((prev) => prev + 1)}
-                className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 disabled:opacity-50"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </button>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              >إلغاء</button>
+              <button onClick={handleDelete}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+              >حذف</button>
             </div>
           </div>
         </div>
-      </div>
-
-      <ConfirmDialog
-        open={!!confirmState}
-        title={confirmState?.title ?? ''}
-        description={confirmState?.description}
-        confirmText={confirmState?.confirmText}
-        variant={confirmState?.variant}
-        busy={working}
-        onConfirm={runConfirmAction}
-        onCancel={() => setConfirmState(null)}
-      />
+      )}
     </>
   );
 }

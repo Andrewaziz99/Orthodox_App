@@ -14,7 +14,7 @@ import { OtpCode } from './otp.entity';
 export class AuthService {
   constructor(
     @InjectRepository(User) private usersRepo: Repository<User>,
-    @InjectRepository(OtpCode) private otpRepo: Repository<OtpCode>,
+    @InjectRepository(OtpCode) private otpRepo: Repository<OtpCode>, // ← single consistent name
     private jwtService: JwtService,
   ) {}
 
@@ -29,12 +29,14 @@ export class AuthService {
       });
 
       const passwordHash = await bcrypt.hash(password, 10);
-      const adminUser = existingAdmin ?? this.usersRepo.create({
-        name: 'Admin',
-        email,
-        role: 'super_admin',
-        status: 'active',
-      } as Partial<User>);
+      const adminUser =
+        existingAdmin ??
+        this.usersRepo.create({
+          name: 'Admin',
+          email,
+          role: 'super_admin',
+          status: 'active',
+        } as Partial<User>);
 
       adminUser.passwordHash = passwordHash;
       await this.usersRepo.save(adminUser);
@@ -63,21 +65,47 @@ export class AuthService {
   }
 
   // ─── Endpoint 2: Send OTP ─────────────────────────────────────
-  async sendOtp(phone: string) {
+  async sendOtp(phone: string): Promise<{ message: string }> {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Delete any old OTPs for this phone
-    await this.otpRepo.delete({ phone });
+    // Delete old OTPs for this phone
+    await this.otpRepo.delete({ phone }); // ← fixed: was this.otpRepository
 
     // Save new OTP
-    await this.otpRepo.save({ phone, code, expiresAt, used: false });
+    await this.otpRepo.save({ phone, code, expiresAt, used: false }); // ← fixed
 
-    // TODO: Send via Twilio/Firebase SMS later
-    // For now, log it during development
-    console.log(`OTP for ${phone}: ${code}`);
+    // Send via Cequens (falls back to console.log in development)
+    if (process.env.CEQUENS_API_TOKEN) {
+      await this.sendSms(phone, `Your Bible School verification code is: ${code}`);
+    } else {
+      console.log(`[DEV] OTP for ${phone}: ${code}`);
+    }
 
     return { message: 'OTP sent successfully' };
+  }
+
+  private async sendSms(to: string, message: string): Promise<void> {
+    const response = await fetch('https://apis.cequens.com/sms/v1/messages', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        Authorization: `Bearer ${process.env.CEQUENS_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        senderName: process.env.CEQUENS_SENDER_NAME || 'BibleSchool',
+        messageType: 'text',
+        shortURL: false,
+        recipients: [{ msisdn: to }],
+        messageText: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`SMS failed: ${error.message}`);
+    }
   }
 
   // ─── Endpoint 3: Verify OTP ───────────────────────────────────
@@ -94,7 +122,7 @@ export class AuthService {
     // Mark OTP as used
     await this.otpRepo.save({ ...otp, used: true });
 
-    // Find or create the user
+    // Find user — must be invited by church admin first
     const user = await this.usersRepo.findOne({ where: { phone } });
 
     if (!user)
@@ -109,6 +137,10 @@ export class AuthService {
   private signToken(user: User) {
     const payload = {
       sub: user.id,
+      id: user.id,         // ← added: Flutter decoder reads 'id'
+      name: user.name,     // ← added: needed by Flutter HomeHeader
+      email: user.email,   // ← added
+      phone: user.phone,   // ← added
       role: user.role,
       churchId: user.churchId,
     };

@@ -1,29 +1,37 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { clearSession, getUser } from '@/lib/auth/session';
 import { isSuperAdmin } from '@/lib/auth/middleware';
-import { LayoutDashboard, Building2, Users, BookOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, BookOpen, LayoutTemplate, LogOut } from 'lucide-react';
 
 const navItems = [
   { href: '/admin',            label: 'الرئيسية',     icon: LayoutDashboard, superAdminOnly: false },
   { href: '/admin/churches',   label: 'الكنائس',      icon: Building2,       superAdminOnly: true  },
   { href: '/admin/users',      label: 'المستخدمون',   icon: Users,           superAdminOnly: false },
   { href: '/admin/curricula',  label: 'المناهج',      icon: BookOpen,        superAdminOnly: false },
+  { href: '/admin/content',    label: 'إدارة المحتوى', icon: LayoutTemplate,  superAdminOnly: false },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const router   = useRouter();
-  const user     = getUser();
-  const isSuper  = isSuperAdmin();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const user = mounted ? getUser() : null;
+  const isSuper = mounted ? isSuperAdmin() : false;
 
   const visible = navItems.filter((i) => !i.superAdminOnly || isSuper);
 
   const handleLogout = () => {
     clearSession();
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   return (

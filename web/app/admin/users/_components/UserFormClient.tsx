@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createUser, getUser, updateUser, type CreateUserRequest, type UpdateUserRequest } from '@/lib/api/users';
-import { getAllChurches, type Church } from '@/lib/api/churches';
+import { getChurches, type Church } from '@/lib/api/churches';
 import { handleApiError } from '@/lib/api/client';
 import { useRequireAdmin } from '@/lib/auth/middleware';
 import { isSuperAdmin } from '@/lib/auth/middleware';
@@ -62,7 +62,7 @@ export default function UserForm({ mode }: { mode: 'new' | 'edit' }) {
     const load = async () => {
       try {
         const [churchList, userData] = await Promise.all([
-          getAllChurches().catch(() => []),
+          getChurches().catch(() => []),
           isEdit && userId ? getUser(userId) : Promise.resolve(null),
         ]);
 

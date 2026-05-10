@@ -4,7 +4,6 @@
  */
 
 import { api } from './client';
-import { clearSession } from '../auth/session';
 import { AuthUser } from '../auth/session';
 
 export interface LoginRequest {
@@ -63,6 +62,7 @@ export async function getCurrentUser(): Promise<UserProfileResponse> {
  * Logout (client-side, clears token)
  */
 export async function logout(): Promise<void> {
-  clearSession();
+  // Optional: call backend logout endpoint if implemented
+  // await api.post('/auth/logout');
   return Promise.resolve();
 }

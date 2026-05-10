@@ -1,8 +1,3 @@
-/**
- * Admin Dashboard Overview
- * Main dashboard with statistics and quick actions
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,116 +6,90 @@ import { getUser } from '@/lib/auth/session';
 import { getChurches } from '@/lib/api/churches';
 import { getUsers } from '@/lib/api/users';
 import AdminTopbar from '@/components/admin/AdminTopbar';
-import { Building2, Users, BookOpen, TrendingUp, LayoutTemplate } from 'lucide-react';
+import { Building2, Users, BookOpen, GraduationCap, Plus, RefreshCw } from 'lucide-react';
 
-interface DashboardStats {
-  totalChurches: number;
-  totalUsers: number;
-  totalCurricula: number;
-  activeStudents: number;
+interface Stats {
+  churches: number;
+  users: number;
+  servants: number;
+  students: number;
+  loading: boolean;
 }
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const user = getUser();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalChurches: 0,
-    totalUsers: 0,
-    totalCurricula: 5, // Fixed: 5 curricula mentioned in docs
-    activeStudents: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStats();
-  }, []);
+  const [stats, setStats] = useState<Stats>({ churches: 0, users: 0, servants: 0, students: 0, loading: true });
 
   const loadStats = async () => {
+    setStats(s => ({ ...s, loading: true }));
     try {
       const [churches, users] = await Promise.all([
-        getChurches({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
-        getUsers({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
+        getChurches().catch(() => []),
+        getUsers().catch(() => []),
       ]);
-
       setStats({
-        totalChurches: churches.meta.total,
-        totalUsers: users.meta.total,
-        totalCurricula: 5,
-        activeStudents: users.data.filter((u) => u.role === 'child').length,
+        churches: churches.length,
+        users: users.length,
+        servants: users.filter(u => u.role === 'servant').length,
+        students: users.filter(u => u.role === 'child').length,
+        loading: false,
       });
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    } finally {
-      setLoading(false);
+    } catch {
+      setStats(s => ({ ...s, loading: false }));
     }
   };
 
-  const statCards = [
-    {
-      title: 'Total Churches',
-      value: stats.totalChurches,
-      icon: Building2,
-      color: 'bg-blue-500',
-      link: '/admin/churches',
-    },
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: Users,
-      color: 'bg-green-500',
-      link: '/admin/users',
-    },
-    {
-      title: 'Curricula',
-      value: stats.totalCurricula,
-      icon: BookOpen,
-      color: 'bg-purple-500',
-      link: '/admin/curricula',
-    },
-    {
-      title: 'Active Students',
-      value: stats.activeStudents,
-      icon: TrendingUp,
-      color: 'bg-orange-500',
-      link: '/admin/users',
-    },
+  useEffect(() => { loadStats(); }, []);
+
+  const cards = [
+    { label: 'الكنائس',       value: stats.churches, icon: Building2,    color: 'bg-blue-500',   link: '/admin/churches' },
+    { label: 'المستخدمون',    value: stats.users,    icon: Users,         color: 'bg-green-500',  link: '/admin/users'    },
+    { label: 'الخدام',        value: stats.servants, icon: BookOpen,      color: 'bg-purple-500', link: '/admin/users'    },
+    { label: 'الأطفال',       value: stats.students, icon: GraduationCap, color: 'bg-orange-500', link: '/admin/users'    },
   ];
 
   return (
     <>
-      <AdminTopbar title="Dashboard" />
-      
-      <div className="p-6">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.name || 'Admin'}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Here's what's happening with Bible School today.
-          </p>
+      <AdminTopbar title="لوحة التحكم" />
+      <div className="p-6" dir="rtl">
+
+        {/* Welcome */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              أهلاً، {user?.name || 'المشرف'}!
+            </h1>
+            <p className="text-gray-500 mt-1">إليك ملخص النظام اليوم</p>
+          </div>
+          <button onClick={loadStats}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${stats.loading ? 'animate-spin' : ''}`} />
+            تحديث
+          </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statCards.map((card) => {
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          {cards.map(card => {
             const Icon = card.icon;
             return (
-              <div
-                key={card.title}
-                onClick={() => router.push(card.link)}
-                className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              <div key={card.label} onClick={() => router.push(card.link)}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      {card.title}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {loading ? '...' : card.value}
+                    <p className="text-sm text-gray-500 mb-1">{card.label}</p>
+                    <p className="text-4xl font-bold text-gray-900">
+                      {stats.loading ? (
+                        <span className="inline-block w-10 h-9 bg-gray-200 rounded animate-pulse" />
+                      ) : (
+                        card.value.toLocaleString('ar-EG')
+                      )}
                     </p>
                   </div>
-                  <div className={`${card.color} p-3 rounded-lg`}>
+                  <div className={`${card.color} p-3 rounded-xl`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -130,57 +99,27 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => router.push('/admin/churches/new')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-            >
-              <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Add Church</p>
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/content')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors"
-            >
-              <LayoutTemplate className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Content</p>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/users/new')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-            >
-              <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Add User</p>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/curricula')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
-            >
-              <BookOpen className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">
-                Manage Curricula
-              </p>
-            </button>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">إجراءات سريعة</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'إضافة كنيسة',    icon: Building2,    link: '/admin/churches/new', hover: 'hover:border-blue-400 hover:bg-blue-50'   },
+              { label: 'إضافة مستخدم',   icon: Users,        link: '/admin/users/new',    hover: 'hover:border-green-400 hover:bg-green-50' },
+              { label: 'إدارة المناهج',  icon: BookOpen,     link: '/admin/curricula',    hover: 'hover:border-purple-400 hover:bg-purple-50'},
+            ].map(action => {
+              const Icon = action.icon;
+              return (
+                <button key={action.label} onClick={() => router.push(action.link)}
+                  className={`flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed border-gray-200 rounded-xl ${action.hover} transition-colors`}
+                >
+                  <Icon className="w-8 h-8 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700">{action.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Recent Activity
-          </h2>
-          <div className="text-center py-8 text-gray-500">
-            <p>No recent activity to display</p>
-            <p className="text-sm mt-2">Activity tracking coming soon</p>
-          </div>
-        </div>
       </div>
     </>
   );
