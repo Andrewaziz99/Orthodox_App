@@ -1,35 +1,57 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { User } from '../users/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 
-@Entity()
+@Entity('church')
 export class Church {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
-  @Column()
-  name!: string;
+  @Column({ type: 'varchar', nullable: false })
+  name: string;
 
-  @Column({ default: 'pending' })
-  status: string = 'pending';
+  @Column({ type: 'varchar', nullable: true, default: null })
+  location: string | null;
 
-  @Column({ default: 0 })
-  maxChildren: number = 0;
+  @Column({ type: 'varchar', nullable: true, default: null })
+  address: string | null;
 
-  @Column({ nullable: true })
-  location?: string;
+  @Column({ type: 'varchar', nullable: true, default: null })
+  phone: string | null;
 
-  @Column({ nullable: true })
-  address?: string;
+  @Column({ type: 'varchar', nullable: true, default: null })
+  email: string | null;
 
-  @Column({ nullable: true })
-  phone?: string;
+  @Column({
+    type: 'enum',
+    enum: ['pending', 'active', 'rejected'],
+    default: 'pending',
+  })
+  status: 'pending' | 'active' | 'rejected';
 
-  @Column({ nullable: true })
-  email?: string;
+  @Column({ type: 'int', nullable: true, default: null, name: 'max_children' })
+  maxChildren: number | null;
 
-  @Column({ nullable: true })
-  subscriptionStartDate?: Date;
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+    default: null,
+    name: 'subscription_start_date',
+  })
+  subscriptionStartDate: Date | null;
 
-  @OneToMany(() => User, (user) => user.church)
-  members!: User[];
+  // Referenced by user.entity → @ManyToOne(() => Church, (church) => church.members)
+  @OneToMany('User', 'church')
+  members: any[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

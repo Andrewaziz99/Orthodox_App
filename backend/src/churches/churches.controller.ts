@@ -2,66 +2,64 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Param,
   Patch,
   Delete,
+  Body,
+  Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ChurchesService } from './churches.service';
-import type { CreateChurchDto } from './dto/create-church.dto';
-import type { UpdateChurchDto } from './dto/update-church.dto';
+import { CreateChurchDto, UpdateChurchDto } from './dto/church.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { ListChurchesQueryDto } from './dto/list-churches-query.dto';
-import { BulkChurchActionDto } from './dto/bulk-church-action.dto';
 
 @Controller('churches')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ChurchesController {
-  constructor(private readonly svc: ChurchesService) {}
+  constructor(private readonly churchesService: ChurchesService) {}
 
-  // Admins can list churches
   @Get()
-  list(@Query() query: ListChurchesQueryDto) {
-    return this.svc.findAll(query);
+  @Roles('super_admin', 'church_admin')
+  findAll(
+    @Query('search') search?: string,
+    @Query('page')   page?:   number,
+    @Query('limit')  limit?:  number,
+    @Query('status') status?: string,
+  ) {
+    return this.churchesService.findAll({ search, page, limit, status });
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.findOne(id);
+  @Roles('super_admin', 'church_admin')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.churchesService.findOne(id);
   }
 
-  // Only super admins can create churches
   @Post()
   @Roles('super_admin')
-  create(@Body() body: CreateChurchDto) {
-    return this.svc.create(body);
+  @HttpCode(HttpStatus.CREATED)
+  create(@Body() dto: CreateChurchDto) {
+    return this.churchesService.create(dto);
   }
 
   @Patch(':id')
   @Roles('super_admin')
-  update(@Param('id') id: string, @Body() body: UpdateChurchDto) {
-    return this.svc.update(id, body);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateChurchDto,
+  ) {
+    return this.churchesService.update(id, dto);
   }
 
   @Delete(':id')
   @Roles('super_admin')
-  remove(@Param('id') id: string) {
-    return this.svc.remove(id);
-  }
-
-  @Delete('bulk')
-  @Roles('super_admin')
-  bulkRemove(@Body() body: BulkChurchActionDto) {
-    return this.svc.bulkRemove(body.ids);
-  }
-
-  @Patch('bulk/status')
-  @Roles('super_admin')
-  bulkUpdateStatus(@Body() body: BulkChurchActionDto) {
-    return this.svc.bulkUpdateStatus(body.ids, { status: body.status });
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.churchesService.remove(id);
   }
 }

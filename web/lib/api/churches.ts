@@ -1,8 +1,3 @@
-/**
- * Churches API Service
- * CRUD operations for church management
- */
-
 import { api } from './client';
 
 export interface Church {
@@ -32,58 +27,32 @@ export interface UpdateChurchRequest extends Partial<CreateChurchRequest> {
   status?: 'pending' | 'active' | 'rejected';
 }
 
-/**
- * Get all churches (admin only)
- */
+/** Handles both plain array and paginated { data, total } responses */
 export async function getChurches(): Promise<Church[]> {
-  // Backend returns a paginated shape: { data: Church[], meta: {...} }
-  const res = await api.get<any>('/churches');
-  if (Array.isArray(res)) return res as Church[];
-  if (res && Array.isArray(res.data)) return res.data as Church[];
-  return [];
+  const res = await api.get<Church[] | { data: Church[]; total: number }>('/churches');
+  return Array.isArray(res) ? res : res.data;
 }
 
-/**
- * Get church by ID
- */
 export async function getChurch(id: string): Promise<Church> {
   return api.get<Church>(`/churches/${id}`);
 }
 
-/**
- * Create new church (super admin only)
- */
 export async function createChurch(data: CreateChurchRequest): Promise<Church> {
   return api.post<Church>('/churches', data);
 }
 
-/**
- * Update church
- */
-export async function updateChurch(
-  id: string,
-  data: UpdateChurchRequest
-): Promise<Church> {
+export async function updateChurch(id: string, data: UpdateChurchRequest): Promise<Church> {
   return api.patch<Church>(`/churches/${id}`, data);
 }
 
-/**
- * Delete church (super admin only)
- */
 export async function deleteChurch(id: string): Promise<void> {
   return api.delete<void>(`/churches/${id}`);
 }
 
-/**
- * Approve church registration
- */
 export async function approveChurch(id: string): Promise<Church> {
   return updateChurch(id, { status: 'active' });
 }
 
-/**
- * Reject church registration
- */
 export async function rejectChurch(id: string): Promise<Church> {
   return updateChurch(id, { status: 'rejected' });
 }

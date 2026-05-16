@@ -80,21 +80,28 @@ export default function ChurchForm({ mode }: { mode: 'new' | 'edit' }) {
 
     setLoading(true);
 
-    const payload: CreateChurchRequest | UpdateChurchRequest = {
+    const payload: UpdateChurchRequest = {
       name: form.name.trim(),
-      location: form.location.trim() || undefined,
-      address: form.address.trim() || undefined,
-      phone: form.phone.trim() || undefined,
-      email: form.email.trim() || undefined,
-      maxChildren: form.maxChildren ? parseInt(form.maxChildren, 10) : undefined,
-    } as any;
+      location: form.location.trim(),
+      address: form.address.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      maxChildren: form.maxChildren ? parseInt(form.maxChildren, 10) : 0,
+    };
 
     try {
       if (isEdit && churchId) {
         await updateChurch(churchId, payload);
         setSuccess('Church updated successfully.');
       } else {
-        await createChurch(payload);
+        await createChurch({
+          name: payload.name || '',
+          location: payload.location,
+          address: payload.address,
+          phone: payload.phone,
+          email: payload.email,
+          maxChildren: payload.maxChildren,
+        });
         setSuccess('Church created successfully.');
         setTimeout(() => router.push('/admin/churches'), 1000);
       }
