@@ -21,6 +21,35 @@ import {
 
 export default async function HomePage() {
   // Fetch all section content in parallel
+  const content = await Promise.all([
+    getSectionContent("hero"),
+    getSectionContent("about"),
+    getSectionContent("audience"),
+    getSectionContent("app"),
+    getSectionContent("videos"),
+    getSectionContent("vision"),
+    getSectionContent("cta"),
+    getNewsArticles(),
+    getCurriculaList(),
+    getVideos(),
+    getSectionContent("news"),
+    getSectionContent("curricula"),
+  ]).catch((error) => {
+    console.error('Home page content is unavailable:', error);
+    return null;
+  });
+
+  if (!content) {
+    return (
+      <main className="flex min-h-[70vh] items-center justify-center px-6 text-center">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900">Content temporarily unavailable</h1>
+          <p className="mt-3 text-slate-600">Please try again in a few minutes.</p>
+        </div>
+      </main>
+    );
+  }
+
   const [
     heroContent,
     aboutContent,
@@ -34,20 +63,7 @@ export default async function HomePage() {
     dynamicVideos,
     newsSection,
     curriculaSection,
-  ] = await Promise.all([
-    getSectionContent("hero"),
-    getSectionContent("about"),
-    getSectionContent("audience"),
-    getSectionContent("app"),
-    getSectionContent("videos"),
-    getSectionContent("vision"),
-    getSectionContent("cta"),
-    getNewsArticles(),
-    getCurriculaList(),
-    getVideos(),
-    getSectionContent("news"),
-    getSectionContent("curricula"),
-  ]);
+  ] = content;
 
   return (
     <>

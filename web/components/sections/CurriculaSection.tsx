@@ -2,14 +2,13 @@
 "use client";
 
 import React, { useRef } from 'react';
-import Image from 'next/image';
 import { useGSAP } from '@gsap/react';
 import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { SectionHeader, Card, Badge, Button } from '../ui';
 import { Clock, Users, ArrowRight, ArrowLeft } from 'lucide-react';
-import { curricula as staticCurricula } from '@/lib/data/curricula';
 import type { DynamicCurriculum } from '@/lib/api/content';
+import { parseFeaturedIds } from '@/lib/content-parsing';
 
 interface CurriculaSectionProps {
   content?: DynamicCurriculum[];
@@ -21,20 +20,11 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const sectionRef = useRef<HTMLElement>(null);
 
-  const featuredIds = JSON.parse(sectionContent?.featuredIds?.en || '[]');
+  const featuredIds = parseFeaturedIds(sectionContent?.featuredIds?.en);
 
-  // If we have dynamic content but NO featured IDs are selected, hide the whole section
-  if (content && content.length > 0 && featuredIds.length === 0) return <div className="hidden" id="curricula-hidden-marker" />;
-
-  // Fallback to static if backend didn't provide data
-  const dataList = (content && content.length > 0) ? content : staticCurricula;
-  
-  // Filter by featured selection and SORT by featuredIds order
-  const publishedList = (content && content.length > 0) 
-    ? (dataList as DynamicCurriculum[])
-        .filter(c => c.published && featuredIds.includes(c.id))
-        .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id))
-    : dataList;
+  const publishedList = (content || [])
+    .filter(c => c.published && featuredIds.includes(c.id))
+    .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id));
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
@@ -53,6 +43,8 @@ export default function CurriculaSection({ content, sectionContent }: CurriculaS
 
     return () => ctx.revert();
   }, { scope: sectionRef });
+
+  if (publishedList.length === 0) return <div className="hidden" id="curricula-hidden-marker" />;
 
   return (
     <section ref={sectionRef} id="curricula" className="py-24 bg-white relative overflow-hidden">

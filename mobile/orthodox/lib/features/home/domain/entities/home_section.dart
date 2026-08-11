@@ -31,7 +31,7 @@ class HomeSections {
         return _churchAdminSections;
       case UserRole.superAdmin:
         return _superAdminSections;
-      default:
+      case null:
         return _childSections;
     }
   }

@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
-import '../../features/auth/presentation/pages/phone_entry_page.dart';
-import '../../features/auth/presentation/pages/otp_verification_page.dart';
+import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../shared/pages/splash_page.dart';
 import '../../shared/pages/unauthorized_page.dart';
@@ -25,13 +26,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/login',
-          builder: (_, __) => const PhoneEntryPage(),
-        ),
-        GoRoute(
-          path: '/otp/:phone',
-          builder: (context, state) => OtpVerificationPage(
-            phone: state.pathParameters['phone']!,
-          ),
+          builder: (_, __) => const LoginPage(),
         ),
         GoRoute(
           path: '/home',
@@ -53,18 +48,17 @@ class AppRouter {
     final location = state.uri.toString();
 
     final isOnSplash = location == '/splash';
-    final isOnAuth =
-        location.startsWith('/login') || location.startsWith('/otp');
+    final isOnAuth = location == '/login';
 
     // Only the very first load (before AuthCheckRequested resolves) stays on splash
     if (authState is AuthInitial) {
       return isOnSplash ? null : '/splash';
     }
 
-    // AuthLoading / AuthOtpSent / AuthError → don't redirect, let UI handle it
-    if (authState is AuthLoading ||
-        authState is AuthOtpSent ||
-        authState is AuthError) {
+    if (authState is AuthError && isOnSplash) return '/login';
+
+    // Loading and form errors stay on their current page.
+    if (authState is AuthLoading || authState is AuthError) {
       return null;
     }
 
@@ -84,7 +78,15 @@ class AppRouter {
 
 /// Makes GoRouter re-evaluate redirect whenever AuthBloc emits a new state.
 class _BlocListenable extends ChangeNotifier {
+  late final StreamSubscription<AuthState> _subscription;
+
   _BlocListenable(AuthBloc bloc) {
-    bloc.stream.listen((_) => notifyListeners());
+    _subscription = bloc.stream.listen((_) => notifyListeners());
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }

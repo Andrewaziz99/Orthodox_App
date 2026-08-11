@@ -28,7 +28,11 @@ export function ContinuousText({ chapter, bookName, lang }: ContinuousTextProps)
         </span>
       </div>
       
-      <div className="text-slate-800 text-justify" style={{ direction: 'inherit' }}>
+      {chapter.verses.length === 0 ? (
+        <p className="text-center text-base text-slate-500">
+          {lang === 'ar' ? 'نص هذا الإصحاح غير متاح في هذه الترجمة.' : 'This chapter is not available in this translation.'}
+        </p>
+      ) : <div className="text-slate-800 text-justify" style={{ direction: 'inherit' }}>
         {chapter.verses.map((verse) => (
           <span
             key={verse.number}
@@ -57,7 +61,7 @@ export function ContinuousText({ chapter, bookName, lang }: ContinuousTextProps)
             </span>
           </span>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Plus, Save, Trash2, Image as ImageIcon, Play, Video, Upload } from 'luc
 import { Card, Button } from '@/components/ui';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { getVideos, upsertVideo, deleteVideo, uploadImage, bulkUpsertSection, DynamicVideo } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
+import { handleApiError } from '@/lib/api/client';
 
 export function VideoManager() {
   const [videos, setVideos] = useState<DynamicVideo[]>([]);
@@ -33,44 +33,43 @@ export function VideoManager() {
   }
 
   async function handleUpload(file: File, type: 'thumb' | 'video') {
-    const token = getToken();
-    if (!token) return;
     setUploading(type);
-    const url = await uploadImage(file, token);
-    setUploading(null);
-    if (url) {
+    try {
+      const url = await uploadImage(file);
       setEditingVideo(prev => ({
         ...prev,
         [type === 'thumb' ? 'thumbnailUrl' : 'videoUrl']: url,
         ...(type === 'video' ? { isYoutube: false } : {})
       }));
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setUploading(null);
     }
   }
 
   async function handleSave() {
     if (!editingVideo) return;
-    const token = getToken();
-    if (!token) return;
-    const result = await upsertVideo(editingVideo, token);
-    if (result) {
+    try {
+      await upsertVideo(editingVideo);
       setEditingVideo(null);
-      loadVideos();
-    } else {
-      alert('Failed to save video');
+      await loadVideos();
+    } catch (error) {
+      alert(handleApiError(error));
     }
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this video?')) return;
-    const token = getToken();
-    if (!token) return;
-    const ok = await deleteVideo(id, token);
-    if (ok) loadVideos();
+    try {
+      await deleteVideo(id);
+      await loadVideos();
+    } catch (error) {
+      alert(handleApiError(error));
+    }
   }
 
   async function handleSaveSection() {
-    const token = getToken();
-    if (!token) return;
     setSavingSection(true);
     const updates = Object.entries(content).map(([key, val]) => ({
       key,
@@ -78,9 +77,14 @@ export function VideoManager() {
       valueEn: val.en,
       type: val.type
     }));
-    const ok = await bulkUpsertSection('videos', updates, token);
-    setSavingSection(false);
-    if (ok) alert('Section settings saved!');
+    try {
+      await bulkUpsertSection('videos', updates);
+      alert('Section settings saved!');
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setSavingSection(false);
+    }
   }
 
   const handleMetadataChange = (key: string, locale: 'ar' | 'en', value: string) => {

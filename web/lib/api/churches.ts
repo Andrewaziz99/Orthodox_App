@@ -1,119 +1,104 @@
-/**
- * Churches API Service
- * CRUD operations for church management
- */
+import { graphyApi } from './client';
 
-import { api } from './client';
-import type { PaginatedResponse } from './pagination';
+export type ChurchReviewStatus =
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
+  | 'needs_more_info';
 
 export interface Church {
   id: string;
   name: string;
-  location?: string;
-  address?: string;
+  representativeName?: string;
   phone?: string;
   email?: string;
-  status: 'pending' | 'active' | 'rejected';
-  maxChildren?: number;
-  subscriptionStartDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  governorate?: string;
+  area?: string;
+  diocese?: string;
+  responsiblePriestName?: string;
+  expectedChildrenCount?: number;
+  maxChildrenAllowed: number;
+  requestedCurriculumCodes: string[];
+  notes?: string;
+  preferredContactMethod: string;
+  status: ChurchReviewStatus;
+  rejectionReason?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+  activation?: {
+    otpId: string;
+    expiresAt: string;
+    devCode?: string;
+  };
 }
 
-export interface CreateChurchRequest {
+interface GraphyChurch extends Record<string, unknown> {
+  id: string;
   name: string;
-  location?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  maxChildren?: number;
-}
-
-export interface UpdateChurchRequest extends Partial<CreateChurchRequest> {
-  status?: 'pending' | 'active' | 'rejected';
+  representative_name?: string | null;
+  representative_phone?: string | null;
+  representative_email?: string | null;
+  governorate?: string | null;
+  area?: string | null;
+  diocese?: string | null;
+  responsible_priest_name?: string | null;
+  expected_children_count?: number | null;
+  max_children_allowed: number;
+  requested_curriculum_codes?: string[];
+  notes?: string | null;
+  preferred_contact_method: string;
+  rejection_reason?: string | null;
+  submitted_at: string;
+  reviewed_at?: string | null;
+  church_statuses?: { code: ChurchReviewStatus };
+  activation?: Church['activation'];
 }
 
 export interface ChurchListQuery {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: 'pending' | 'active' | 'rejected';
+  status?: ChurchReviewStatus;
 }
 
-/**
- * Get all churches (admin only)
- */
-export async function getChurches(
-  query: ChurchListQuery = {}
-): Promise<PaginatedResponse<Church>> {
-  const params = new URLSearchParams();
-  if (query.page) params.set('page', String(query.page));
-  if (query.limit) params.set('limit', String(query.limit));
-  if (query.search) params.set('search', query.search);
-  if (query.status) params.set('status', query.status);
-  const suffix = params.toString() ? `?${params.toString()}` : '';
-  return api.get<PaginatedResponse<Church>>(`/churches${suffix}`);
+export interface ReviewChurchRequest {
+  decision: Exclude<ChurchReviewStatus, 'pending_review'>;
+  maxChildrenAllowed?: number;
+  rejectionReason?: string;
 }
 
-/**
- * Get church by ID
- */
+function normalizeChurch(raw: GraphyChurch, status?: ChurchReviewStatus): Church {
+  return {
+    id: raw.id,
+    name: raw.name,
+    representativeName: raw.representative_name ?? undefined,
+    phone: raw.representative_phone ?? undefined,
+    email: raw.representative_email ?? undefined,
+    governorate: raw.governorate ?? undefined,
+    area: raw.area ?? undefined,
+    diocese: raw.diocese ?? undefined,
+    responsiblePriestName: raw.responsible_priest_name ?? undefined,
+    expectedChildrenCount: raw.expected_children_count ?? undefined,
+    maxChildrenAllowed: raw.max_children_allowed,
+    requestedCurriculumCodes: raw.requested_curriculum_codes ?? [],
+    notes: raw.notes ?? undefined,
+    preferredContactMethod: raw.preferred_contact_method,
+    status: status ?? raw.church_statuses?.code ?? 'pending_review',
+    rejectionReason: raw.rejection_reason ?? undefined,
+    submittedAt: raw.submitted_at,
+    reviewedAt: raw.reviewed_at ?? undefined,
+    activation: raw.activation,
+  };
+}
+
+export async function getChurches(query: ChurchListQuery = {}): Promise<Church[]> {
+  const suffix = query.status ? `?status=${encodeURIComponent(query.status)}` : '';
+  const churches = await graphyApi.get<GraphyChurch[]>(`/churches${suffix}`);
+  return churches.map((church) => normalizeChurch(church));
+}
+
 export async function getChurch(id: string): Promise<Church> {
-  return api.get<Church>(`/churches/${id}`);
+  return normalizeChurch(await graphyApi.get<GraphyChurch>(`/churches/${id}`));
 }
 
-/**
- * Create new church (super admin only)
- */
-export async function createChurch(data: CreateChurchRequest): Promise<Church> {
-  return api.post<Church>('/churches', data);
-}
-
-/**
- * Update church
- */
-export async function updateChurch(
-  id: string,
-  data: UpdateChurchRequest
-): Promise<Church> {
-  return api.patch<Church>(`/churches/${id}`, data);
-}
-
-/**
- * Delete church (super admin only)
- */
-export async function deleteChurch(id: string): Promise<void> {
-  return api.delete<void>(`/churches/${id}`);
-}
-
-export async function bulkDeleteChurches(ids: string[]): Promise<{ deleted: number }> {
-  return api.delete<{ deleted: number }>('/churches/bulk', {
-    body: JSON.stringify({ ids }),
-  });
-}
-
-export async function bulkApproveChurches(ids: string[]): Promise<{ updated: number }> {
-  return api.patch<{ updated: number }>('/churches/bulk/status', {
-    ids,
-    status: 'active',
-  });
-}
-
-/**
- * Approve church registration
- */
-export async function approveChurch(id: string): Promise<Church> {
-  return updateChurch(id, { status: 'active' });
-}
-
-/**
- * Reject church registration
- */
-export async function rejectChurch(id: string): Promise<Church> {
-  return updateChurch(id, { status: 'rejected' });
-}
-
-export async function getAllChurches(): Promise<Church[]> {
-  const response = await getChurches({ page: 1, limit: 1000 });
-  return response.data;
+export async function reviewChurch(id: string, review: ReviewChurchRequest): Promise<Church> {
+  const church = await graphyApi.patch<GraphyChurch>(`/churches/${id}/review`, review);
+  return normalizeChurch(church, review.decision);
 }

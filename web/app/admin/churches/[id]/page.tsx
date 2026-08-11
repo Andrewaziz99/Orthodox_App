@@ -4,8 +4,10 @@
 
 'use client';
 
-import ChurchForm from '../_components/ChurchFormClient';
+import ChurchReviewClient from '../_components/ChurchReviewClient';
+import { useRequireSuperAdmin } from '@/lib/auth/middleware';
 
-export default function EditChurchPage() {
-  return <ChurchForm mode="edit" />;
+export default function ChurchDetailPage() {
+  useRequireSuperAdmin();
+  return <ChurchReviewClient />;
 }

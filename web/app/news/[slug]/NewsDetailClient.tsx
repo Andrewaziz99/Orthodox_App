@@ -4,6 +4,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 import { DynamicNewsArticle } from '@/lib/api/content';
 import { useLang } from '@/components/providers/LanguageProvider';
 import { PageHero } from '@/components/ui/PageHero';
@@ -83,7 +84,7 @@ export default function NewsDetailClient({ article }: { article: DynamicNewsArti
           <div className="prose prose-lg prose-slate max-w-none">
             <div 
               className="text-xl leading-[1.9] text-slate-700 font-medium mb-8 whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: body }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
             />
             
             {/* Decorative divider */}

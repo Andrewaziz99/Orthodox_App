@@ -1,130 +1,157 @@
-// import 'package:bloc_test/bloc_test.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:orthodox/core/network/auth_session_events.dart';
+import 'package:orthodox/features/auth/data/models/auth_user_model.dart';
 import 'package:orthodox/features/auth/domain/entities/auth_user.dart';
+import 'package:orthodox/features/auth/domain/repositories/auth_repository.dart';
 import 'package:orthodox/features/auth/domain/usecases/auth_usecases.dart';
 import 'package:orthodox/features/auth/presentation/bloc/auth_bloc.dart';
 
-class MockSendOtpUseCase extends Mock implements SendOtpUseCase {}
-
-class MockVerifyOtpUseCase extends Mock implements VerifyOtpUseCase {}
-
-class MockGetStoredSessionUseCase extends Mock
-    implements GetStoredSessionUseCase {}
-
-class MockLogoutUseCase extends Mock implements LogoutUseCase {}
-
 const _testUser = AuthUser(
   id: 'user-1',
-  name: 'Test User',
-  phone: '+201001234567',
+  fullName: 'Test User',
   role: UserRole.servant,
-  accessToken: 'test.jwt.token',
+  churchId: 'church-1',
+  classId: 'class-1',
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
 );
 
+class _FakeAuthRepository implements AuthRepository {
+  Either<String, AuthUser> loginResult = const Right(_testUser);
+  Either<String, AuthUser?> storedSessionResult = const Right(null);
+  String? loginIdentifier;
+  String? loginPassword;
+
+  @override
+  Future<Either<String, AuthUser?>> getStoredSession() async => storedSessionResult;
+
+  @override
+  Future<Either<String, AuthUser>> login({
+    required String identifier,
+    required String password,
+  }) async {
+    loginIdentifier = identifier;
+    loginPassword = password;
+    return loginResult;
+  }
+
+  @override
+  Future<Either<String, Unit>> logout() async => const Right(unit);
+}
+
+AuthBloc _createBloc(
+  _FakeAuthRepository repository,
+  AuthSessionEvents sessionEvents,
+) {
+  return AuthBloc(
+    LoginUseCase(repository),
+    GetStoredSessionUseCase(repository),
+    LogoutUseCase(repository),
+    sessionEvents,
+  );
+}
+
 void main() {
-  late AuthBloc bloc;
-  late MockSendOtpUseCase sendOtp;
-  late MockVerifyOtpUseCase verifyOtp;
-  late MockGetStoredSessionUseCase getSession;
-  late MockLogoutUseCase logout;
+  test('valid Graphy login authenticates the user', () async {
+    final repository = _FakeAuthRepository();
+    final bloc = _createBloc(repository, AuthSessionEvents());
+    addTearDown(bloc.close);
 
-  setUp(() {
-    sendOtp = MockSendOtpUseCase();
-    verifyOtp = MockVerifyOtpUseCase();
-    getSession = MockGetStoredSessionUseCase();
-    logout = MockLogoutUseCase();
+    final states = expectLater(
+      bloc.stream,
+      emitsInOrder([isA<AuthLoading>(), isA<AuthAuthenticated>()]),
+    );
 
-    bloc = AuthBloc(sendOtp, verifyOtp, getSession, logout);
+    bloc.add(
+      const AuthLoginRequested(
+        identifier: 'servant@example.com',
+        password: 'secret',
+      ),
+    );
+
+    await states;
+    expect((bloc.state as AuthAuthenticated).user, _testUser);
+    expect(repository.loginIdentifier, 'servant@example.com');
+    expect(repository.loginPassword, 'secret');
   });
 
-  tearDown(() => bloc.close());
+  test('session expiry immediately unauthenticates the user', () async {
+    final repository = _FakeAuthRepository()
+      ..storedSessionResult = const Right(_testUser);
+    final sessionEvents = AuthSessionEvents();
+    final bloc = _createBloc(repository, sessionEvents);
+    addTearDown(bloc.close);
 
-  // group('AuthCheckRequested', () {
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, Authenticated] when session exists',
-  //     build: () {
-  //       when(() => getSession()).thenAnswer((_) async => _testUser);
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(AuthCheckRequested()),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthAuthenticated>()],
-  //   );
-  //
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, Unauthenticated] when no session',
-  //     build: () {
-  //       when(() => getSession()).thenAnswer((_) async => null);
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(AuthCheckRequested()),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthUnauthenticated>()],
-  //   );
-  // });
-  //
-  // group('AuthOtpSendRequested', () {
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, OtpSent] on success',
-  //     build: () {
-  //       when(() => sendOtp(any())).thenAnswer((_) async => const Right(null));
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(const AuthOtpSendRequested('+201001234567')),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthOtpSent>()],
-  //   );
-  //
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, Error] on failure',
-  //     build: () {
-  //       when(() => sendOtp(any()))
-  //           .thenAnswer((_) async => const Left('Phone not found'));
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(const AuthOtpSendRequested('+201001234567')),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthError>()],
-  //   );
-  // });
-  //
-  // group('AuthOtpVerifyRequested', () {
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, Authenticated] on valid OTP',
-  //     build: () {
-  //       when(() =>
-  //               verifyOtp(phone: any(named: 'phone'), code: any(named: 'code')))
-  //           .thenAnswer((_) async => const Right(_testUser));
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(
-  //       const AuthOtpVerifyRequested(phone: '+201001234567', code: '123456'),
-  //     ),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthAuthenticated>()],
-  //   );
-  //
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Loading, Error] on invalid OTP',
-  //     build: () {
-  //       when(() =>
-  //               verifyOtp(phone: any(named: 'phone'), code: any(named: 'code')))
-  //           .thenAnswer((_) async => const Left('Invalid or expired OTP code'));
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(
-  //       const AuthOtpVerifyRequested(phone: '+201001234567', code: '000000'),
-  //     ),
-  //     expect: () => [isA<AuthLoading>(), isA<AuthError>()],
-  //   );
-  // });
-  //
-  // group('AuthLogoutRequested', () {
-  //   blocTest<AuthBloc, AuthState>(
-  //     'emits [Unauthenticated] after logout',
-  //     build: () {
-  //       when(() => logout()).thenAnswer((_) async {});
-  //       return bloc;
-  //     },
-  //     act: (b) => b.add(AuthLogoutRequested()),
-  //     expect: () => [isA<AuthUnauthenticated>()],
-  //   );
-  // });
+    final restoredStates = expectLater(
+      bloc.stream,
+      emitsInOrder([isA<AuthLoading>(), isA<AuthAuthenticated>()]),
+    );
+    bloc.add(AuthCheckRequested());
+    await restoredStates;
+
+    final expiredState =
+        expectLater(bloc.stream, emits(isA<AuthUnauthenticated>()));
+    sessionEvents.notifyExpired();
+    await expiredState;
+  });
+
+  test('temporary startup failure is not treated as logged out', () async {
+    final repository = _FakeAuthRepository()
+      ..storedSessionResult = const Left('Unable to connect.');
+    final bloc = _createBloc(repository, AuthSessionEvents());
+    addTearDown(bloc.close);
+
+    final states = expectLater(
+      bloc.stream,
+      emitsInOrder([isA<AuthLoading>(), isA<AuthError>()]),
+    );
+
+    bloc.add(AuthCheckRequested());
+
+    await states;
+    expect((bloc.state as AuthError).message, 'Unable to connect.');
+  });
+
+  test('Graphy response and Hive projection use explicit wire names', () {
+    final model = AuthUserModel.fromLoginResponse({
+      'accessToken': 'access-token',
+      'refreshToken': 'refresh-token',
+      'user': {
+        'id': 'admin-1',
+        'type': 'church_admin',
+        'churchId': 'church-1',
+        'fullName': 'Church Admin',
+        'classId': null,
+      },
+    });
+
+    expect(model.role, UserRole.churchAdmin);
+    expect(model.classId, isNull);
+    expect(model.refreshToken, 'refresh-token');
+    expect(model.toUserProjection(), {
+      'id': 'admin-1',
+      'fullName': 'Church Admin',
+      'type': 'church_admin',
+      'churchId': 'church-1',
+      'classId': null,
+    });
+    expect(model.toUserProjection().containsKey('accessToken'), isFalse);
+    expect(model.toUserProjection().containsKey('refreshToken'), isFalse);
+
+    final restored = AuthUserModel.fromStorage(
+      model.toUserProjection(),
+      accessToken: model.accessToken,
+      refreshToken: model.refreshToken,
+    );
+    expect(restored.role, UserRole.churchAdmin);
+    expect(restored.refreshToken, 'refresh-token');
+  });
+
+  test('unknown Graphy user type is rejected', () {
+    expect(
+      () => userRoleFromWire('unknown'),
+      throwsA(isA<FormatException>()),
+    );
+  });
 }

@@ -2,8 +2,10 @@
 
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Chapter, BibleMetadata, MetadataBook, MetadataTestament } from '@/lib/bible-types';
+import { getBibleChapter } from '@/lib/api/bible';
 
-const STORAGE_KEY = 'orthodox_bible_position';
+// Versioned because Graphy's 75-book IDs differ from the removed 66-book corpus.
+const STORAGE_KEY = 'orthodox_bible_position_v2';
 
 export function useBibleNavigation(metadata: BibleMetadata, lang: 'en' | 'ar') {
   const [selectedTestament, setSelectedTestament] = useState<'OT' | 'NT'>('OT');
@@ -68,22 +70,20 @@ export function useBibleNavigation(metadata: BibleMetadata, lang: 'en' | 'ar') {
   }, [currentBook]);
 
   // Optimized Fetcher with Caching
-  const fetchChapterData = useCallback(async (bookNum: number, chapterNum: number, language: string) => {
+  const fetchChapterData = useCallback(async (bookNum: number, chapterNum: number, language: 'en' | 'ar') => {
     const cacheKey = `${language}-${bookNum}-${chapterNum}`;
     
     // Return from cache if exists
     if (chapterCache.current.has(cacheKey)) {
-      return chapterCache.current.get(cacheKey);
+      return chapterCache.current.get(cacheKey)!;
     }
 
     try {
-      const response = await fetch(`/data/bible/${language}/${bookNum}/${chapterNum}.json`);
-      if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
+      const chapter = await getBibleChapter(bookNum, chapterNum, language);
       
       // Save to cache
-      chapterCache.current.set(cacheKey, data);
-      return data;
+      chapterCache.current.set(cacheKey, chapter);
+      return chapter;
     } catch (error) {
       console.error(`Error fetching chapter ${bookNum}:${chapterNum}`, error);
       return null;
@@ -95,11 +95,16 @@ export function useBibleNavigation(metadata: BibleMetadata, lang: 'en' | 'ar') {
     let isMounted = true;
     
     async function updateActiveChapter() {
+      if (!currentBook) {
+        setCurrentChapterData(null);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
-      const data = await fetchChapterData(selectedBookNumber, selectedChapter, lang);
+      const chapter = await fetchChapterData(selectedBookNumber, selectedChapter, lang);
       
       if (isMounted) {
-        setCurrentChapterData(data);
+        setCurrentChapterData(chapter);
         setIsLoading(false);
         
         // Prefetch Neighbors
@@ -112,10 +117,10 @@ export function useBibleNavigation(metadata: BibleMetadata, lang: 'en' | 'ar') {
     return () => {
       isMounted = false;
     };
-  }, [lang, selectedBookNumber, selectedChapter, fetchChapterData]);
+  }, [lang, selectedBookNumber, selectedChapter, currentBook, fetchChapterData]);
 
   // Smart Prefetching Logic
-  const prefetchNeighbors = useCallback((bookNum: number, chapterNum: number, language: string) => {
+  const prefetchNeighbors = useCallback((bookNum: number, chapterNum: number, language: 'en' | 'ar') => {
     // 1. Next Chapter in same book
     if (chapterNum < (currentBook?.chapterCount || 0)) {
         fetchChapterData(bookNum, chapterNum + 1, language);
@@ -139,12 +144,9 @@ export function useBibleNavigation(metadata: BibleMetadata, lang: 'en' | 'ar') {
     setSelectedBookNumber(bookNumber);
     setSelectedChapter(1);
     
-    if (bookNumber >= 40) {
-      setSelectedTestament('NT');
-    } else {
-      setSelectedTestament('OT');
-    }
-  }, []);
+    const testamentIndex = testaments.findIndex((testament) => testament.books.some((book) => book.number === bookNumber));
+    setSelectedTestament(testamentIndex === 1 ? 'NT' : 'OT');
+  }, [testaments]);
 
   const handleSelectChapter = useCallback((chapter: number) => {
     setSelectedChapter(chapter);

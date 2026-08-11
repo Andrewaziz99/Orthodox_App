@@ -28,6 +28,7 @@ export interface MetadataBook {
   number: number;
   name: string;
   chapterCount: number;
+  division?: string;
 }
 
 export interface MetadataTestament {

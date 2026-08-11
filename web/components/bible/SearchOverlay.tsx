@@ -38,10 +38,9 @@ export function SearchOverlay({ results, searchTerm, onResultClick, lang }: Sear
                 <div className="font-bold text-teal-700 mb-2 group-hover:text-teal-800 transition-colors">
                   {result.verseRef}
                 </div>
-                <div 
-                  className="text-slate-700 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: highlightMatches(result.text, searchTerm) }} 
-                />
+                <div className="text-slate-700 leading-relaxed">
+                  {highlightMatches(result.text, searchTerm)}
+                </div>
               </Card>
             </button>
           ))}
@@ -51,13 +50,18 @@ export function SearchOverlay({ results, searchTerm, onResultClick, lang }: Sear
   );
 }
 
-// Simple highlighter helper
 function highlightMatches(text: string, term: string) {
-  if (!term || term.trim() === '') return text;
-  
-  // Basic case-insensitive highlight
-  // Note: for more advanced Arabic search highlighting it may need more logic, 
-  // but for now we fallback to simple replacement.
-  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return text.replace(regex, '<mark class="bg-yellow-200/60 text-slate-900 rounded px-1 -mx-1">$1</mark>');
+  const query = term.trim();
+  if (!query) return text;
+
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return text.split(regex).map((part, index) =>
+    index % 2 === 1 ? (
+      <mark key={index} className="bg-yellow-200/60 text-slate-900 rounded px-1 -mx-1">
+        {part}
+      </mark>
+    ) : (
+      part
+    ),
+  );
 }

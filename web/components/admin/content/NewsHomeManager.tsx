@@ -20,16 +20,19 @@ import {
 } from '@dnd-kit/sortable';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { getNewsArticles, bulkUpsertSection, DynamicNewsArticle } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
 import { SortableItem } from './SortableItem';
 
 export function NewsHomeManager() {
   const [allNews, setAllNews] = useState<DynamicNewsArticle[]>([]);
   const { content, setContent, loading } = useSiteContent('news');
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getNewsArticles(true).then(setAllNews);
+    getNewsArticles(true).then(setAllNews).catch((error) => {
+      console.error('Failed to load protected news', error);
+      setLoadError(true);
+    });
   }, []);
 
   const featuredIds = useMemo<string[]>(() => {
@@ -87,7 +90,6 @@ export function NewsHomeManager() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = getToken() || '';
       const finalContent = { ...content };
       if (!finalContent.heading) finalContent.heading = { ar: '', en: '', type: 'text' };
       if (!finalContent.subheading) finalContent.subheading = { ar: '', en: '', type: 'text' };
@@ -100,12 +102,8 @@ export function NewsHomeManager() {
         type: v.type || 'text' 
       }));
       
-      const success = await bulkUpsertSection('news', entries, token);
-      if (success) {
-        alert('News home settings saved successfully!');
-      } else {
-        alert('Failed to save. Please try again.');
-      }
+      await bulkUpsertSection('news', entries);
+      alert('News home settings saved successfully!');
     } catch (err) {
       console.error(err);
       alert('An error occurred while saving.');
@@ -115,6 +113,7 @@ export function NewsHomeManager() {
   };
 
   if (loading) return <div className="p-12 text-center text-slate-500 font-bold">Loading News Settings...</div>;
+  if (loadError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">Unable to load protected news.</div>;
 
   return (
     <div className="space-y-8">

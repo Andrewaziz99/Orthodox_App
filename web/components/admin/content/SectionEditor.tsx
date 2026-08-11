@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Save, Image as ImageIcon, Layout } from 'lucide-react';
+import { Save, Image as ImageIcon, Layout, Plus } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { bulkUpsertSection, uploadImage } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
+import { handleApiError } from '@/lib/api/client';
 import { DynamicJsonEditor } from './DynamicJsonEditor';
 
 interface SectionEditorProps {
@@ -15,7 +15,7 @@ interface SectionEditorProps {
 }
 
 export function SectionEditor({ sectionId, label, icon }: SectionEditorProps) {
-  const { content, loading } = useSiteContent(sectionId);
+  const { content, loading, error } = useSiteContent(sectionId);
   
   // Local state for edits
   const [edits, setEdits] = useState<Record<string, { ar: string; en: string; type: string }>>({});
@@ -48,10 +48,10 @@ export function SectionEditor({ sectionId, label, icon }: SectionEditorProps) {
   }, [content, loading]);
 
   if (loading) return <div className="animate-pulse h-64 bg-slate-100 rounded-2xl w-full" />;
+  if (error) return <Card className="p-8 text-center text-red-600">{error}</Card>;
 
   const handleSave = async () => {
     setSaving(true);
-    const token = getToken() || ''; 
     const payload = Object.entries(edits).map(([key, val]) => ({
       key,
       valueAr: val.ar,
@@ -59,30 +59,46 @@ export function SectionEditor({ sectionId, label, icon }: SectionEditorProps) {
       type: val.type
     }));
 
-    const success = await bulkUpsertSection(sectionId, payload, token);
-    setSaving(false);
-    if (success) alert('Saved successfully!');
-    else alert('Failed to save.');
+    try {
+      await bulkUpsertSection(sectionId, payload);
+      alert('Saved successfully!');
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleImageUpload = async (key: string, file: File) => {
     setUploadingImage(key);
-    const token = getToken() || '';
-    const url = await uploadImage(file, token);
-    setUploadingImage(null);
-    if (url) {
+    try {
+      const url = await uploadImage(file);
       setEdits(prev => ({
         ...prev,
         [key]: { ...prev[key], ar: url, en: url }
       }));
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setUploadingImage(null);
     }
   };
 
-  const keys = Object.keys(edits);
+  const handleAddField = () => {
+    const key = window.prompt('Field key:')?.trim();
+    if (!key) return;
+    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(key)) {
+      alert('Use letters, numbers, and underscores, starting with a letter.');
+      return;
+    }
+    if (edits[key]) {
+      alert('That field already exists.');
+      return;
+    }
+    setEdits((current) => ({ ...current, [key]: { ar: '', en: '', type: 'text' } }));
+  };
 
-  if (keys.length === 0) {
-    return <Card className="p-8 text-center text-slate-500">No content found for this section.</Card>;
-  }
+  const keys = Object.keys(edits);
 
   return (
     <Card className="p-8 shadow-sm border-slate-200">
@@ -96,13 +112,22 @@ export function SectionEditor({ sectionId, label, icon }: SectionEditorProps) {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{sectionId}</p>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="shadow-lg shadow-teal-600/20 px-6">
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleAddField}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Field
+          </Button>
+          <Button onClick={handleSave} disabled={saving || keys.length === 0} className="shadow-lg shadow-teal-600/20 px-6">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-8">
+        {keys.length === 0 && (
+          <p className="py-8 text-center text-slate-500">No fields yet. Add one to initialize this section.</p>
+        )}
         {keys.filter(key => !(sectionId === 'app' && key.toLowerCase().includes('image'))).map(key => {
           const field = edits[key];
           return (

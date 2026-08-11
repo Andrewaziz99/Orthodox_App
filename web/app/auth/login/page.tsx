@@ -8,7 +8,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api/auth';
-import { setSession, getUserFromToken } from '@/lib/auth/session';
+import { setSession } from '@/lib/auth/session';
 import { handleApiError } from '@/lib/api/client';
 import { Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 
@@ -16,7 +16,7 @@ export default function LoginPage() {
   const router = useRouter();
   
   // Form state
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
@@ -31,30 +31,24 @@ export default function LoginPage() {
 
     try {
       // Validate inputs
-      if (!email || !password) {
-        throw new Error('Please enter both email and password');
+      if (!identifier || !password) {
+        throw new Error('Please enter both your email or phone and password');
       }
 
       // Call login API
-      const response = await login({ email, password });
-      
-      // Decode token to get user info
-      const user = getUserFromToken(response.access_token);
-      
-      if (!user) {
-        throw new Error('Invalid authentication response');
-      }
+      const response = await login({ identifier, password });
 
       // Check if user is admin
-      if (user.role !== 'super_admin' && user.role !== 'church_admin') {
+      if (response.user.type !== 'super_admin' && response.user.type !== 'church_admin') {
         throw new Error('Access denied. Admin privileges required.');
       }
 
       // Store session
-      setSession(response.access_token, user);
+      setSession(response.accessToken, response.refreshToken, response.user);
 
       // Redirect to admin dashboard
-      router.push('/admin');
+      const destination = new URLSearchParams(window.location.search).get('from');
+      router.push(destination?.startsWith('/admin') ? destination : '/admin');
       router.refresh();
     } catch (err) {
       setError(handleApiError(err));
@@ -89,22 +83,22 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="identifier"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Email Address
+                Email or Phone
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="identifier"
+                name="identifier"
+                type="text"
+                autoComplete="username"
                 required
                 className="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="admin@bibleschool.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address or phone number"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -191,18 +185,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Development Credentials */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-            <p className="text-xs text-yellow-800 font-medium mb-2">
-              Development Mode - Test Credentials
-            </p>
-            <p className="text-xs text-yellow-700">
-              Email: admin@bibleschool.com<br />
-              Password: Admin@1234
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

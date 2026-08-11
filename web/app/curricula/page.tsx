@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { Clock, Users, ArrowRight, ArrowLeft } from 'lucide-react';
@@ -13,14 +12,15 @@ export default function CurriculaPage() {
   const { t, dir, locale } = useLang();
   const [curriculaList, setCurriculaList] = React.useState<DynamicCurriculum[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const { content, loading: contentLoading } = useSiteContent('curricula_page');
+  const [error, setError] = React.useState<string | null>(null);
+  const { content, loading: contentLoading, error: contentError } = useSiteContent('curricula_page');
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
 
   React.useEffect(() => {
-    getCurriculaList().then(data => {
-      setCurriculaList(data);
-      setLoading(false);
-    });
+    getCurriculaList()
+      .then(setCurriculaList)
+      .catch(() => setError('Curricula are temporarily unavailable.'))
+      .finally(() => setLoading(false));
   }, []);
 
   const breadcrumbs = [
@@ -33,6 +33,7 @@ export default function CurriculaPage() {
   };
 
   if (loading || contentLoading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (error || contentError) return <div className="min-h-screen flex items-center justify-center bg-white text-slate-700">{error || contentError}</div>;
 
   return (
     <>
@@ -146,6 +147,11 @@ export default function CurriculaPage() {
               );
             })}
           </div>
+          {curriculaList.length === 0 && (
+            <div className="rounded-3xl border border-slate-100 bg-slate-50 px-6 py-16 text-center text-slate-500">
+              {locale === 'ar' ? 'لا توجد مناهج منشورة حالياً.' : 'No curricula are published yet.'}
+            </div>
+          )}
         </div>
       </section>
     </>

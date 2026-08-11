@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { Upload } from 'lucide-react';
-import { getToken } from '@/lib/auth/session';
 import { uploadImage } from '@/lib/api/content';
+import { handleApiError } from '@/lib/api/client';
 
 interface DynamicJsonEditorProps {
   field: { ar: string; en: string; type: string };
@@ -70,10 +70,8 @@ export function DynamicJsonEditor({
                     const file = e.target.files?.[0];
                     if (file) {
                       setUploadingPath(pathKey);
-                      const token = getToken() || '';
-                      const url = await uploadImage(file, token);
-                      setUploadingPath(null);
-                      if (url) {
+                      try {
+                        const url = await uploadImage(file);
                         const updateNested = (obj: any, currentPath: (string | number)[]): any => {
                           if (currentPath.length === 0) return url;
                           const [head, ...rest] = currentPath;
@@ -88,6 +86,10 @@ export function DynamicJsonEditor({
                         const newAr = JSON.stringify(updateNested(dataAr, path));
                         const newEn = JSON.stringify(updateNested(dataEn, path));
                         onChange({ ...field, ar: newAr, en: newEn });
+                      } catch (error) {
+                        alert(handleApiError(error));
+                      } finally {
+                        setUploadingPath(null);
                       }
                     }
                   }} 

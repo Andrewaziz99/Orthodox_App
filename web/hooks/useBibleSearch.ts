@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { SearchResult } from '@/lib/bible-types';
+import { searchBible } from '@/lib/api/bible';
 
 export interface UseBibleSearchProps {
   language: 'en' | 'ar';
@@ -20,11 +21,9 @@ export function useBibleSearch({ language }: UseBibleSearchProps) {
 
     const delayDebounceFn = setTimeout(async () => {
       setIsSearching(true);
+      setSearchResults([]);
       try {
-        const response = await fetch(`/api/bible/search?q=${encodeURIComponent(searchTerm)}&lang=${language}`);
-        if (!response.ok) throw new Error('Search failed');
-        const data = await response.json();
-        setSearchResults(data.results || []);
+        setSearchResults(await searchBible(searchTerm, language));
       } catch (error) {
         console.error('Search error:', error);
       } finally {

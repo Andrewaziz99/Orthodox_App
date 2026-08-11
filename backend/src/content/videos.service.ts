@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Video } from './video.entity';
+import { CreateVideoDto, UpdateVideoDto } from './video.dto';
 
 @Injectable()
 export class VideosService {
@@ -20,18 +25,18 @@ export class VideosService {
     return video;
   }
 
-  async create(data: Partial<Video>) {
+  async create(videoFields: CreateVideoDto) {
     const count = await this.videoRepo.count();
     if (count >= 6) {
-      throw new Error('Maximum of 6 videos reached');
+      throw new BadRequestException('Maximum of 6 videos reached');
     }
-    const video = this.videoRepo.create(data);
+    const video = this.videoRepo.create(videoFields);
     return this.videoRepo.save(video);
   }
 
-  async update(id: string, data: Partial<Video>) {
+  async update(id: string, videoFields: UpdateVideoDto) {
     const video = await this.findOne(id);
-    Object.assign(video, data);
+    Object.assign(video, videoFields);
     return this.videoRepo.save(video);
   }
 

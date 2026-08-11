@@ -1,14 +1,13 @@
 services:
   db:
-    image: postgres:latest
-    container_name: orthodox_db
-    restart: always
+    image: postgres:18
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Andrew99
-      POSTGRES_DB: OrthodoxDB
+      POSTGRES_USER: ${CMS_DATABASE_USER:-cms}
+      POSTGRES_PASSWORD: ${CMS_DATABASE_PASSWORD:-cms}
+      POSTGRES_DB: ${CMS_DATABASE_NAME:-orthodox_cms}
     ports:
-      - "5432:5432"
+      - "${CMS_DATABASE_PORT:-5436}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
 

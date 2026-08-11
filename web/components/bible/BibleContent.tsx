@@ -5,12 +5,11 @@ import { ContinuousText } from './ContinuousText';
 import { SearchOverlay } from './SearchOverlay';
 import { ChapterGrid } from './ChapterGrid';
 import { SearchResult } from '@/lib/bible-types';
-import { getBookName } from '@/lib/book-names';
 import { BibleSkeleton } from './BibleSkeleton';
 
 interface BibleContentProps {
   currentChapter: Chapter | null;
-  currentBookNumber: number;
+  currentBookName: string;
   availableChapters: number[];
   selectedChapter: number;
   onSelectChapter: (c: number) => void;
@@ -25,7 +24,7 @@ interface BibleContentProps {
 
 export function BibleContent({
   currentChapter,
-  currentBookNumber,
+  currentBookName,
   availableChapters,
   selectedChapter,
   onSelectChapter,
@@ -38,7 +37,7 @@ export function BibleContent({
   onSearchResultClick
 }: BibleContentProps) {
   const isSearching = searchTerm.trim().length > 0;
-  const bookName = getBookName(currentBookNumber, lang);
+  const bookName = currentBookName || (lang === 'ar' ? 'الكتاب المقدس' : 'Bible');
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden w-full h-full relative">

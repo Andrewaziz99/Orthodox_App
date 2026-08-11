@@ -1,140 +1,81 @@
-/**
- * Authentication Session Management
- * Handles JWT token storage, validation, and user session
- */
-
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const USER_KEY = 'auth_user';
+const SESSION_GENERATION_KEY = 'auth_session_generation';
+export const SESSION_CLEARED_EVENT = 'graphy-session-cleared';
+
+export type GraphyUserType = 'super_admin' | 'church_admin' | 'servant' | 'child';
 
 export interface AuthUser {
   id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  role: 'super_admin' | 'church_admin' | 'servant' | 'child';
+  type: GraphyUserType;
   churchId?: string;
+  fullName?: string;
+  classId?: string;
 }
 
-export interface AuthToken {
-  access_token: string;
-  role: string;
-}
-
-/**
- * Store authentication token and user data.
- * Writes to both localStorage (client reads) and a cookie (middleware reads).
- */
-export function setSession(token: string, user: AuthUser): void {
-  if (typeof window === 'undefined') return;
-
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-
-  // Also persist to cookie so Next.js middleware can check auth server-side.
-  // Not httpOnly — client JS needs read access too. Use Secure in production.
-  const isProduction = process.env.NODE_ENV === 'production';
-  const secure = isProduction ? '; Secure' : '';
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+function writeTokenCookie(token: string): void {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
   document.cookie = `auth_token=${token}; Path=/; Expires=${expires}; SameSite=Lax${secure}`;
 }
 
-/**
- * Get stored authentication token
- */
-export function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(TOKEN_KEY);
+export function setSession(accessToken: string, refreshToken: string, user: AuthUser): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem(SESSION_GENERATION_KEY, crypto.randomUUID());
+  setTokens(accessToken, refreshToken);
 }
 
-/**
- * Get stored user data
- */
+export function setTokens(accessToken: string, refreshToken: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  writeTokenCookie(accessToken);
+}
+
+export function getToken(): string | null {
+  return typeof window === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  return typeof window === 'undefined' ? null : localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function getSessionGeneration(): string | null {
+  if (typeof window === 'undefined') return null;
+  const generation = localStorage.getItem(SESSION_GENERATION_KEY);
+  if (generation) return generation;
+  if (!getToken() || !getRefreshToken()) return null;
+
+  const migratedGeneration = crypto.randomUUID();
+  localStorage.setItem(SESSION_GENERATION_KEY, migratedGeneration);
+  return migratedGeneration;
+}
+
 export function getUser(): AuthUser | null {
   if (typeof window === 'undefined') return null;
-  
-  const userData = localStorage.getItem(USER_KEY);
-  if (!userData) return null;
-  
+  const serializedUser = localStorage.getItem(USER_KEY);
+  if (!serializedUser) return null;
+
   try {
-    return JSON.parse(userData);
+    return JSON.parse(serializedUser) as AuthUser;
   } catch {
     return null;
   }
 }
 
-/**
- * Check if user is authenticated
- */
 export function isAuthenticated(): boolean {
-  return !!getToken();
+  return Boolean(getToken() && getUser());
 }
 
-/**
- * Check if user has required role
- */
-export function hasRole(requiredRoles: string[]): boolean {
-  const user = getUser();
-  if (!user) return false;
-  return requiredRoles.includes(user.role);
-}
-
-/**
- * Clear session and logout
- */
-export function clearSession(): void {
+export function clearSession(expectedGeneration?: string): void {
   if (typeof window === 'undefined') return;
-
+  if (expectedGeneration && getSessionGeneration() !== expectedGeneration) return;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-
-  // Expire the cookie so middleware stops allowing access immediately
+  localStorage.removeItem(SESSION_GENERATION_KEY);
   document.cookie = 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-}
-
-/**
- * Decode JWT token (basic, without verification)
- * For display purposes only - server validates
- */
-export function decodeToken(token: string): any {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Check if token is expired
- */
-export function isTokenExpired(token: string): boolean {
-  const decoded = decodeToken(token);
-  if (!decoded || !decoded.exp) return true;
-  
-  const expirationTime = decoded.exp * 1000; // Convert to milliseconds
-  return Date.now() >= expirationTime;
-}
-
-/**
- * Get user from token
- */
-export function getUserFromToken(token: string): AuthUser | null {
-  const decoded = decodeToken(token);
-  if (!decoded) return null;
-  
-  return {
-    id: decoded.sub || decoded.id,
-    name: decoded.name || '',
-    email: decoded.email,
-    phone: decoded.phone,
-    role: decoded.role,
-    churchId: decoded.churchId,
-  };
+  window.dispatchEvent(new Event(SESSION_CLEARED_EVENT));
 }

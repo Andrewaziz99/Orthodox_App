@@ -4,20 +4,34 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { getCurriculaList, upsertCurriculum, deleteCurriculum, uploadImage, DynamicCurriculum } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
+import { getEducationalCurricula, type EducationalCurriculum } from '@/lib/api/curricula';
+import { handleApiError } from '@/lib/api/client';
 
 export function CurriculaInventoryManager() {
   const [curricula, setCurricula] = useState<DynamicCurriculum[]>([]);
+  const [graphyCurricula, setGraphyCurricula] = useState<EducationalCurriculum[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState<Partial<DynamicCurriculum> | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingBadge, setUploadingBadge] = useState(false);
 
   const fetchCurricula = async () => {
     setLoading(true);
-    const data = await getCurriculaList(true); // Get all including drafts
-    setCurricula(data);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      const [presentations, educationalCurricula] = await Promise.all([
+        getCurriculaList(true),
+        getEducationalCurricula(),
+      ]);
+      setCurricula(presentations);
+      setGraphyCurricula(educationalCurricula);
+    } catch (error) {
+      console.error('Failed to load curriculum management data', error);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -28,38 +42,42 @@ export function CurriculaInventoryManager() {
     if (!editing) return;
     
     // Basic validation
-    if (!editing.titleEn || !editing.titleAr || !editing.slug) {
-      alert('Please fill in both titles and the slug.');
+    if (!editing.titleEn || !editing.titleAr || !editing.slug || !editing.graphyCurriculumId) {
+      alert('Please fill in both titles, the slug, and the Graphy curriculum ID.');
       return;
     }
 
     setSaving(true);
-    const token = getToken() || '';
-    const success = await upsertCurriculum(editing as DynamicCurriculum, token);
-    setSaving(false);
-    if (success) {
+    try {
+      await upsertCurriculum(editing as DynamicCurriculum);
       setEditing(null);
-      fetchCurricula();
-    } else {
-      alert('Failed to save curriculum. Please ensure all fields are filled.');
+      await fetchCurricula();
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this curriculum?')) return;
-    const token = getToken() || '';
-    const success = await deleteCurriculum(id, token);
-    if (success) fetchCurricula();
-        else alert('Failed to delete.');
+    try {
+      await deleteCurriculum(id);
+      await fetchCurricula();
+    } catch (error) {
+      alert(handleApiError(error));
+    }
   };
 
   const handleBadgeUpload = async (file: File) => {
     setUploadingBadge(true);
-    const token = getToken() || '';
-    const url = await uploadImage(file, token);
-    setUploadingBadge(false);
-    if (url && editing) {
-      setEditing({ ...editing, badge: url });
+    try {
+      const url = await uploadImage(file);
+      if (editing) setEditing({ ...editing, badge: url });
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setUploadingBadge(false);
     }
   };
 
@@ -68,6 +86,7 @@ export function CurriculaInventoryManager() {
   };
 
   if (loading) return <div className="animate-pulse h-64 bg-slate-100 rounded-2xl w-full" />;
+  if (loadError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">Unable to load protected curriculum management data.</div>;
 
   return (
     <div className="space-y-6">
@@ -109,6 +128,21 @@ export function CurriculaInventoryManager() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Graphy Curriculum ID</label>
+                    <select
+                      value={editing.graphyCurriculumId || ''}
+                      onChange={e => setEditing(prev => prev ? ({ ...prev, graphyCurriculumId: e.target.value || undefined }) : null)}
+                      className="w-full bg-slate-50 border-slate-200 rounded-xl p-3 text-sm"
+                    >
+                      <option value="">Select a Graphy curriculum</option>
+                      {graphyCurricula.map(curriculum => (
+                        <option key={curriculum.id} value={curriculum.id}>
+                          {curriculum.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-1">English Title (Generates Slug)</label>
                     <input
@@ -313,7 +347,8 @@ export function CurriculaInventoryManager() {
                   ageRangeAr: '',
                   ageRangeEn: '',
                   fullContentAr: '',
-                  fullContentEn: ''
+                   fullContentEn: '',
+                   graphyCurriculumId: ''
                 })}>
                   <Plus className="w-5 h-5 mr-2" />
                   Add New Curriculum

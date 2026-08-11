@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useEffect, useState } from 'react';
-import { Save, GraduationCap } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { 
   DndContext, 
@@ -20,16 +20,19 @@ import {
 } from '@dnd-kit/sortable';
 import { useSiteContent } from '@/hooks/useSiteContent';
 import { getCurriculaList, bulkUpsertSection, DynamicCurriculum } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
 import { SortableItem } from './SortableItem';
 
 export function CurriculaHomeManager() {
   const [allCurricula, setAllCurricula] = useState<DynamicCurriculum[]>([]);
   const { content, setContent, loading } = useSiteContent('curricula');
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getCurriculaList(true).then(setAllCurricula);
+    getCurriculaList(true).then(setAllCurricula).catch((error) => {
+      console.error('Failed to load protected curricula', error);
+      setLoadError(true);
+    });
   }, []);
 
   const featuredIds = useMemo<string[]>(() => {
@@ -87,7 +90,6 @@ export function CurriculaHomeManager() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      const token = getToken() || '';
       const finalContent = { ...content };
       if (!finalContent.heading) finalContent.heading = { ar: '', en: '', type: 'text' };
       if (!finalContent.subheading) finalContent.subheading = { ar: '', en: '', type: 'text' };
@@ -100,12 +102,8 @@ export function CurriculaHomeManager() {
         type: v.type || 'text' 
       }));
       
-      const success = await bulkUpsertSection('curricula', entries, token);
-      if (success) {
-        alert('Curricula home settings saved successfully!');
-      } else {
-        alert('Failed to save. Please try again.');
-      }
+      await bulkUpsertSection('curricula', entries);
+      alert('Curricula home settings saved successfully!');
     } catch (err) {
       console.error(err);
       alert('An error occurred while saving.');
@@ -115,6 +113,7 @@ export function CurriculaHomeManager() {
   };
 
   if (loading) return <div className="p-12 text-center text-slate-500 font-bold">Loading Curricula Settings...</div>;
+  if (loadError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">Unable to load protected curricula.</div>;
 
   return (
     <div className="space-y-8">

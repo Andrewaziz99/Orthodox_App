@@ -6,12 +6,14 @@ import {
   Delete,
   Body,
   Param,
+  ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
 import { VideosService } from './videos.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { CreateVideoDto, UpdateVideoDto } from './video.dto';
+import { GraphyAuthGuard } from '../common/auth/graphy-auth.guard';
+import { RolesGuard } from '../common/auth/roles.guard';
+import { Roles } from '../common/auth/roles.decorator';
 
 @Controller('videos')
 export class VideosController {
@@ -23,28 +25,31 @@ export class VideosController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.videosService.findOne(id);
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(GraphyAuthGuard, RolesGuard)
   @Roles('super_admin')
-  create(@Body() data: any) {
-    return this.videosService.create(data);
+  create(@Body() videoFields: CreateVideoDto) {
+    return this.videosService.create(videoFields);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(GraphyAuthGuard, RolesGuard)
   @Roles('super_admin')
-  update(@Param('id') id: string, @Body() data: any) {
-    return this.videosService.update(id, data);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() videoFields: UpdateVideoDto,
+  ) {
+    return this.videosService.update(id, videoFields);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(GraphyAuthGuard, RolesGuard)
   @Roles('super_admin')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.videosService.remove(id);
   }
 }

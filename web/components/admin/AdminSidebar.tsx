@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { clearSession, getUser } from '@/lib/auth/session';
+import { getUser } from '@/lib/auth/session';
+import { logout } from '@/lib/api/auth';
 import { isSuperAdmin } from '@/lib/auth/middleware';
-import { LayoutDashboard, Building2, Users, BookOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, BookOpen, FileText, LogOut } from 'lucide-react';
 
 const navItems = [
   { href: '/admin',            label: 'الرئيسية',     icon: LayoutDashboard, superAdminOnly: false },
   { href: '/admin/churches',   label: 'الكنائس',      icon: Building2,       superAdminOnly: true  },
-  { href: '/admin/users',      label: 'المستخدمون',   icon: Users,           superAdminOnly: false },
   { href: '/admin/curricula',  label: 'المناهج',      icon: BookOpen,        superAdminOnly: false },
+  { href: '/admin/content',     label: 'المحتوى',      icon: FileText,        superAdminOnly: true  },
 ];
 
 export default function AdminSidebar() {
@@ -21,9 +22,9 @@ export default function AdminSidebar() {
 
   const visible = navItems.filter((i) => !i.superAdminOnly || isSuper);
 
-  const handleLogout = () => {
-    clearSession();
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout().catch(() => undefined);
+    router.push('/auth/login');
   };
 
   return (
@@ -48,8 +49,8 @@ export default function AdminSidebar() {
         })}
       </nav>
       <div className="p-4 border-t border-gray-800">
-        <p className="text-sm font-medium px-4">{user?.name || 'المشرف'}</p>
-        <p className="text-xs text-gray-400 px-4 mb-3 capitalize">{user?.role?.replace('_', ' ')}</p>
+        <p className="text-sm font-medium px-4">{user?.fullName || 'المشرف'}</p>
+        <p className="text-xs text-gray-400 px-4 mb-3 capitalize">{user?.type.replace('_', ' ')}</p>
         <button onClick={handleLogout}
           className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
         >

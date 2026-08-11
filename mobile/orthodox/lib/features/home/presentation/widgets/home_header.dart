@@ -36,7 +36,7 @@ class HomeHeader extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    user?.name ?? 'Welcome',
+                    user?.fullName ?? _roleLabel(user?.role),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -109,7 +109,7 @@ class HomeHeader extends StatelessWidget {
     return 'Good evening';
   }
 
-  String _roleLabel(UserRole role) {
+  String _roleLabel(UserRole? role) {
     switch (role) {
       case UserRole.superAdmin:
         return '⭐ Super Admin';
@@ -118,7 +118,9 @@ class HomeHeader extends StatelessWidget {
       case UserRole.servant:
         return '✝️ Servant';
       case UserRole.child:
-        return '📖 Student';
+        return 'Student';
+      case null:
+        return 'Welcome';
     }
   }
 }

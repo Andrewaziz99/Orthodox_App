@@ -1,17 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { 
-  IsString, 
-  IsOptional, 
-  IsBoolean, 
-  IsNumber, 
-  IsArray, 
-  IsEnum 
+import { IsNull, Not, Repository } from 'typeorm';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsArray,
+  IsEnum,
+  IsUUID,
 } from 'class-validator';
 import { SiteContent, ContentType } from './site-content.entity';
 import { NewsArticle } from './news-article.entity';
-import { Curriculum } from './curriculum.entity';
+import { CurriculumPresentation } from './curriculum-presentation.entity';
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,11 @@ export class UpsertContentDto {
   @IsEnum(ContentType)
   @IsOptional()
   type?: ContentType;
+}
+
+export class BulkContentEntryDto extends UpsertContentDto {
+  @IsString()
+  key!: string;
 }
 
 export class CreateNewsDto {
@@ -84,7 +90,7 @@ export class CreateNewsDto {
 
 export class UpdateNewsDto extends CreateNewsDto {}
 
-export class CreateCurriculumDto {
+class CurriculumPresentationDto {
   @IsString()
   slug: string;
 
@@ -146,6 +152,11 @@ export class CreateCurriculumDto {
   relatedSlugs?: string[];
 }
 
+export class CreateCurriculumDto extends CurriculumPresentationDto {
+  @IsUUID()
+  graphyCurriculumId!: string;
+}
+
 export class UpdateCurriculumDto extends CreateCurriculumDto {}
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -157,9 +168,35 @@ export class ContentService {
     private readonly siteContentRepo: Repository<SiteContent>,
     @InjectRepository(NewsArticle)
     private readonly newsRepo: Repository<NewsArticle>,
-    @InjectRepository(Curriculum)
-    private readonly curriculaRepo: Repository<Curriculum>,
+    @InjectRepository(CurriculumPresentation)
+    private readonly curriculaRepo: Repository<CurriculumPresentation>,
   ) {}
+
+  private validateJsonContent(item: SiteContent): void {
+    if (item.type !== ContentType.JSON) return;
+
+    for (const [locale, serializedValue] of [['Arabic', item.valueAr], ['English', item.valueEn]] as const) {
+      if (serializedValue === null || serializedValue === undefined) continue;
+      try {
+        JSON.parse(serializedValue);
+      } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        throw new BadRequestException(`${locale} value must contain valid JSON.`);
+      }
+    }
+  }
+
+  private async saveContent(
+    repository: Repository<SiteContent>,
+    section: string,
+    key: string,
+    dto: UpsertContentDto,
+  ): Promise<SiteContent> {
+    const existing = await repository.findOne({ where: { section, key } });
+    const item = Object.assign(existing ?? repository.create({ section, key }), dto);
+    this.validateJsonContent(item);
+    return repository.save(item);
+  }
 
   // ── Site Content ────────────────────────────────────────────────────────────
 
@@ -168,8 +205,11 @@ export class ContentService {
   }
 
   async getContentItem(section: string, key: string): Promise<SiteContent> {
-    const item = await this.siteContentRepo.findOne({ where: { section, key } });
-    if (!item) throw new NotFoundException(`Content not found: ${section}/${key}`);
+    const item = await this.siteContentRepo.findOne({
+      where: { section, key },
+    });
+    if (!item)
+      throw new NotFoundException(`Content not found: ${section}/${key}`);
     return item;
   }
 
@@ -178,33 +218,37 @@ export class ContentService {
     key: string,
     dto: UpsertContentDto,
   ): Promise<SiteContent> {
-    let item = await this.siteContentRepo.findOne({ where: { section, key } });
-    if (!item) {
-      item = this.siteContentRepo.create({ section, key });
-    }
-    Object.assign(item, dto);
-    return this.siteContentRepo.save(item);
+    return this.saveContent(this.siteContentRepo, section, key, dto);
   }
 
   async bulkUpsertSection(
     section: string,
     entries: Array<{ key: string } & UpsertContentDto>,
   ): Promise<SiteContent[]> {
-    return Promise.all(
-      entries.map(({ key, ...dto }) => this.upsertContent(section, key, dto)),
-    );
+    return this.siteContentRepo.manager.transaction(async (manager) => {
+      const repository = manager.getRepository(SiteContent);
+      return Promise.all(
+        entries.map(({ key, ...dto }) => this.saveContent(repository, section, key, dto)),
+      );
+    });
   }
 
   // ── News ────────────────────────────────────────────────────────────────────
 
   async getAllNews(publishedOnly = false): Promise<NewsArticle[]> {
     const where = publishedOnly ? { published: true } : {};
-    return this.newsRepo.find({ where, order: { order: 'ASC', createdAt: 'DESC' } });
+    return this.newsRepo.find({
+      where,
+      order: { order: 'ASC', createdAt: 'DESC' },
+    });
   }
 
-  async getNewsBySlug(slug: string): Promise<NewsArticle> {
-    const article = await this.newsRepo.findOne({ where: { slug } });
-    if (!article) throw new NotFoundException(`News article not found: ${slug}`);
+  async getPublishedNewsBySlug(slug: string): Promise<NewsArticle> {
+    const article = await this.newsRepo.findOne({
+      where: { slug, published: true },
+    });
+    if (!article)
+      throw new NotFoundException(`News article not found: ${slug}`);
     return article;
   }
 
@@ -232,29 +276,43 @@ export class ContentService {
 
   // ── Curricula ───────────────────────────────────────────────────────────────
 
-  async getAllCurricula(publishedOnly = false): Promise<Curriculum[]> {
-    const where = publishedOnly ? { published: true } : {};
+  async getAllCurricula(
+    publishedOnly = false,
+  ): Promise<CurriculumPresentation[]> {
+    const where = publishedOnly
+      ? { published: true, graphyCurriculumId: Not(IsNull()) }
+      : {};
     return this.curriculaRepo.find({ where, order: { order: 'ASC' } });
   }
 
-  async getCurriculumBySlug(slug: string): Promise<Curriculum> {
-    const curriculum = await this.curriculaRepo.findOne({ where: { slug } });
-    if (!curriculum) throw new NotFoundException(`Curriculum not found: ${slug}`);
+  async getPublishedCurriculumBySlug(
+    slug: string,
+  ): Promise<CurriculumPresentation> {
+    const curriculum = await this.curriculaRepo.findOne({
+      where: { slug, published: true, graphyCurriculumId: Not(IsNull()) },
+    });
+    if (!curriculum)
+      throw new NotFoundException(`Curriculum not found: ${slug}`);
     return curriculum;
   }
 
-  async getCurriculumById(id: string): Promise<Curriculum> {
+  async getCurriculumById(id: string): Promise<CurriculumPresentation> {
     const curriculum = await this.curriculaRepo.findOne({ where: { id } });
     if (!curriculum) throw new NotFoundException(`Curriculum not found: ${id}`);
     return curriculum;
   }
 
-  async createCurriculum(dto: CreateCurriculumDto): Promise<Curriculum> {
+  async createCurriculum(
+    dto: CreateCurriculumDto,
+  ): Promise<CurriculumPresentation> {
     const curriculum = this.curriculaRepo.create(dto);
     return this.curriculaRepo.save(curriculum);
   }
 
-  async updateCurriculum(id: string, dto: UpdateCurriculumDto): Promise<Curriculum> {
+  async updateCurriculum(
+    id: string,
+    dto: UpdateCurriculumDto,
+  ): Promise<CurriculumPresentation> {
     const curriculum = await this.getCurriculumById(id);
     Object.assign(curriculum, dto);
     return this.curriculaRepo.save(curriculum);

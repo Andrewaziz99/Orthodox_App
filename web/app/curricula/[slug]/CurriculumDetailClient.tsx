@@ -3,6 +3,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 import Image from 'next/image';
 import { DynamicCurriculum } from '@/lib/api/content';
 import { useLang } from '@/components/providers/LanguageProvider';
@@ -116,7 +117,7 @@ export default function CurriculumDetailClient({ curriculum }: { curriculum: Dyn
                    {fullContent ? (
                       <div 
                         className="text-slate-600 leading-[1.9] text-lg whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: fullContent }}
+                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fullContent) }}
                       />
                    ) : (
                       <p className="text-slate-400 italic">

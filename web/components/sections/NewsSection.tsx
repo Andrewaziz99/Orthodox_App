@@ -2,14 +2,13 @@
 "use client";
 
 import React, { useRef } from 'react';
-import Image from 'next/image';
 import { useGSAP } from '@gsap/react';
 import { gsap } from '@/animations/gsap-config';
 import { useLang } from '../providers/LanguageProvider';
 import { SectionHeader, Card, Badge, Button } from '../ui';
 import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
-import { news as staticNews } from '@/lib/data/news';
 import type { DynamicNewsArticle } from '@/lib/api/content';
+import { parseFeaturedIds } from '@/lib/content-parsing';
 
 interface NewsSectionProps {
   content?: DynamicNewsArticle[];
@@ -21,20 +20,11 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
   const sectionRef = useRef<HTMLElement>(null);
 
-  const featuredIds = JSON.parse(sectionContent?.featuredIds?.en || '[]');
+  const featuredIds = parseFeaturedIds(sectionContent?.featuredIds?.en);
 
-  // If we have dynamic content but NO featured IDs are selected, hide the whole section
-  if (content && content.length > 0 && featuredIds.length === 0) return <div className="hidden" id="news-hidden-marker" />;
-
-  // Fallback to static if backend didn't provide data
-  const dataList = (content && content.length > 0) ? content : staticNews;
-  
-  // Filter by featured selection and SORT by featuredIds order
-  const publishedList = (content && content.length > 0) 
-    ? (dataList as DynamicNewsArticle[])
-        .filter(n => n.published && featuredIds.includes(n.id))
-        .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id))
-    : dataList;
+  const publishedList = (content || [])
+    .filter(n => n.published && featuredIds.includes(n.id))
+    .sort((a, b) => featuredIds.indexOf(a.id) - featuredIds.indexOf(b.id));
 
   useGSAP(() => {
     const ctx = gsap.context(() => {
@@ -53,6 +43,8 @@ export const NewsSection = ({ content, sectionContent }: NewsSectionProps) => {
 
     return () => ctx.revert();
   }, { scope: sectionRef });
+
+  if (publishedList.length === 0) return <div className="hidden" id="news-hidden-marker" />;
 
   return (
     <section ref={sectionRef} id="news" className="py-24 bg-white relative">

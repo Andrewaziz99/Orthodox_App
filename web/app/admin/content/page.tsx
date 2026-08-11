@@ -28,8 +28,10 @@ import { CurriculaHomeManager } from '@/components/admin/content/CurriculaHomeMa
 import { NewsHomeManager } from '@/components/admin/content/NewsHomeManager';
 import { CurriculaInventoryManager } from '@/components/admin/content/CurriculaInventoryManager';
 import { NewsInventoryManager } from '@/components/admin/content/NewsInventoryManager';
+import { useRequireSuperAdmin } from '@/lib/auth/middleware';
 
 export default function ContentAdminPage() {
+  useRequireSuperAdmin();
   const { t, locale, dir } = useLang();
   const [activeSection, setActiveSection] = useState<string>('hero');
   

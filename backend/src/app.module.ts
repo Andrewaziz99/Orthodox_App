@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { ChurchesModule } from './churches/churches.module';
 import { ContentModule } from './content/content.module';
+import { CurriculumPresentation } from './content/curriculum-presentation.entity';
+import { NewsArticle } from './content/news-article.entity';
+import { SiteContent } from './content/site-content.entity';
+import { Video } from './content/video.entity';
 
 @Module({
   imports: [
@@ -18,13 +19,10 @@ import { ContentModule } from './content/content.module';
         username: config.get('DATABASE_USER'),
         password: config.get('DATABASE_PASS'),
         database: config.get('DATABASE_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // dev only — disable before production
+        entities: [SiteContent, NewsArticle, CurriculumPresentation, Video],
+        synchronize: false,
       }),
     }),
-    AuthModule,
-    UsersModule,
-    ChurchesModule,
     ContentModule,
   ],
 })

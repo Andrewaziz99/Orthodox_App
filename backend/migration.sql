@@ -1,58 +1,15 @@
--- Orthodox App Database Migration
--- Comprehensive Schema for PostgreSQL
+-- CMS-only PostgreSQL bootstrap and additive migration.
+-- This script intentionally does not create, alter, or drop Graphy-owned tables.
 
--- 1. Enable UUID Extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Create Custom Enums
-DO $$ 
+DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role_enum') THEN
-        CREATE TYPE "user_role_enum" AS ENUM ('super_admin', 'church_admin', 'servant', 'child');
-    END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'content_type_enum') THEN
         CREATE TYPE "content_type_enum" AS ENUM ('text', 'textarea', 'image', 'json');
     END IF;
 END $$;
 
--- 3. Create Tables
-
--- Churches Table
-CREATE TABLE IF NOT EXISTS "church" (
-  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  "name" varchar NOT NULL,
-  "status" varchar NOT NULL DEFAULT 'pending',
-  "maxChildren" integer NOT NULL DEFAULT 0,
-  "location" varchar,
-  "address" varchar,
-  "phone" varchar,
-  "email" varchar,
-  "subscriptionStartDate" timestamp
-);
-
--- Users Table
-CREATE TABLE IF NOT EXISTS "user" (
-  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  "name" varchar NOT NULL,
-  "phone" varchar UNIQUE,
-  "email" varchar UNIQUE,
-  "role" "user_role_enum" NOT NULL,
-  "passwordHash" varchar,
-  "status" varchar NOT NULL DEFAULT 'pending',
-  "churchId" uuid REFERENCES "church"("id") ON DELETE SET NULL,
-  "createdAt" timestamp NOT NULL DEFAULT now()
-);
-
--- OTP Codes Table
-CREATE TABLE IF NOT EXISTS "otp_code" (
-  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  "phone" varchar NOT NULL,
-  "code" varchar NOT NULL,
-  "expiresAt" timestamp NOT NULL,
-  "used" boolean NOT NULL DEFAULT false
-);
-
--- Site Content Table (CMS)
 CREATE TABLE IF NOT EXISTS "site_content" (
   "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   "section" varchar NOT NULL,
@@ -64,9 +21,11 @@ CREATE TABLE IF NOT EXISTS "site_content" (
   UNIQUE ("section", "key")
 );
 
--- Curricula Table
+-- These rows contain website presentation metadata only. The canonical
+-- educational curriculum remains in Graphy and is referenced by UUID.
 CREATE TABLE IF NOT EXISTS "curricula" (
   "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "graphyCurriculumId" uuid,
   "slug" varchar UNIQUE NOT NULL,
   "number" varchar NOT NULL,
   "badge" varchar NOT NULL,
@@ -84,12 +43,23 @@ CREATE TABLE IF NOT EXISTS "curricula" (
   "fullContentEn" text,
   "order" integer NOT NULL DEFAULT 0,
   "published" boolean NOT NULL DEFAULT true,
-  "relatedSlugs" text, -- Stored as comma-separated values
+  "relatedSlugs" text,
   "createdAt" timestamp NOT NULL DEFAULT now(),
   "updatedAt" timestamp NOT NULL DEFAULT now()
 );
 
--- News Articles Table
+-- Existing CMS rows predate Graphy linkage, so the transition stays nullable.
+ALTER TABLE "curricula"
+  ADD COLUMN IF NOT EXISTS "graphyCurriculumId" uuid;
+
+UPDATE "curricula"
+  SET "published" = false
+  WHERE "graphyCurriculumId" IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "UQ_curricula_graphyCurriculumId"
+  ON "curricula" ("graphyCurriculumId")
+  WHERE "graphyCurriculumId" IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS "news_articles" (
   "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   "slug" varchar UNIQUE NOT NULL,
@@ -106,12 +76,11 @@ CREATE TABLE IF NOT EXISTS "news_articles" (
   "image" varchar,
   "published" boolean NOT NULL DEFAULT false,
   "order" integer NOT NULL DEFAULT 0,
-  "relatedSlugs" text, -- Stored as comma-separated values
+  "relatedSlugs" text,
   "createdAt" timestamp NOT NULL DEFAULT now(),
   "updatedAt" timestamp NOT NULL DEFAULT now()
 );
 
--- Video Gallery Table
 CREATE TABLE IF NOT EXISTS "videos" (
   "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   "titleAr" varchar NOT NULL,

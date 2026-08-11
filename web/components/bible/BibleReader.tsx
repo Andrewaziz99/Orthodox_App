@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CombinedBibleMetadata } from '@/lib/bible-types';
 import { useBibleNavigation } from '@/hooks/useBibleNavigation';
 import { useBibleSearch } from '@/hooks/useBibleSearch';
@@ -9,6 +9,7 @@ import { BibleContent } from './BibleContent';
 import { MobileSidebarToggle } from './MobileSidebarToggle';
 
 import { useLang } from '../providers/LanguageProvider';
+import { getBibleMetadata } from '@/lib/api/bible';
 
 interface BibleReaderProps {
   metadata: CombinedBibleMetadata;
@@ -16,10 +17,18 @@ interface BibleReaderProps {
 
 export default function BibleReader({ metadata }: BibleReaderProps) {
   const { locale: lang } = useLang();
-  // Assume either en or ar is present based on the metadata object
-  const currentMetadata = metadata[lang] || metadata['en'] || metadata['ar'];
+  const [availableMetadata, setAvailableMetadata] = useState(metadata);
 
-  const navigation = useBibleNavigation(currentMetadata!, lang);
+  useEffect(() => {
+    if (availableMetadata.en || availableMetadata.ar) return;
+    getBibleMetadata().then(setAvailableMetadata).catch((error) => {
+      console.error('Unable to load Bible books from Graphy:', error);
+    });
+  }, [availableMetadata]);
+
+  const currentMetadata = availableMetadata[lang] || availableMetadata.en || availableMetadata.ar;
+
+  const navigation = useBibleNavigation(currentMetadata || { translation: '', testaments: [] }, lang);
   const search = useBibleSearch({ language: lang });
   
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -62,7 +71,7 @@ export default function BibleReader({ metadata }: BibleReaderProps) {
 
       <BibleContent
         currentChapter={navigation.currentChapter}
-        currentBookNumber={navigation.selectedBookNumber}
+        currentBookName={navigation.currentBook?.name || ''}
         availableChapters={navigation.availableChapters}
         selectedChapter={navigation.selectedChapter}
         onSelectChapter={handleSelectChapterWithScroll}

@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUser, isAuthenticated } from './session';
+import { getUser, isAuthenticated, SESSION_CLEARED_EVENT } from './session';
 
 /**
  * Synchronous helper to check if current user is a super admin
  */
 export function isSuperAdmin(): boolean {
   const u = getUser();
-  return !!u && u.role === 'super_admin';
+  return !!u && u.type === 'super_admin';
 }
 
 /**
@@ -21,13 +21,26 @@ export function useRequireAdmin() {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      const from = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const redirectToLogin = () => {
+      const from = window.location.pathname;
       router.push(`/auth/login?from=${encodeURIComponent(from)}`);
+    };
+    const user = getUser();
+    if (!isAuthenticated() || !user || !['super_admin', 'church_admin'].includes(user.type)) {
+      redirectToLogin();
       return;
     }
 
     setIsChecking(false);
+    window.addEventListener(SESSION_CLEARED_EVENT, redirectToLogin);
+    const handleStorage = () => {
+      if (!isAuthenticated()) redirectToLogin();
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(SESSION_CLEARED_EVENT, redirectToLogin);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [router]);
 
   return { isChecking };
@@ -41,10 +54,18 @@ export function useRequireSuperAdmin() {
   const router = useRouter();
 
   useEffect(() => {
-    const user = getUser();
-    if (!user || user.role !== 'super_admin') {
-      router.push('/admin');
-    }
+    const enforceRole = () => {
+      const user = getUser();
+      if (!isAuthenticated()) router.push('/auth/login');
+      else if (!user || user.type !== 'super_admin') router.push('/admin');
+    };
+    enforceRole();
+    window.addEventListener(SESSION_CLEARED_EVENT, enforceRole);
+    window.addEventListener('storage', enforceRole);
+    return () => {
+      window.removeEventListener(SESSION_CLEARED_EVENT, enforceRole);
+      window.removeEventListener('storage', enforceRole);
+    };
   }, [router]);
 }
 

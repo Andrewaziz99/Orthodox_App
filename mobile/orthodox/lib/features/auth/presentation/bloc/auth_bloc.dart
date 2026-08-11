@@ -1,45 +1,43 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/network/auth_session_events.dart';
 import '../../domain/entities/auth_user.dart';
 import '../../domain/usecases/auth_usecases.dart';
 
-// ── Events ──────────────────────────────────────────────────────────────────
-
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
+
   @override
   List<Object?> get props => [];
 }
 
-/// Check if a session exists in local storage on app start
 class AuthCheckRequested extends AuthEvent {}
 
-/// User submitted their phone number
-class AuthOtpSendRequested extends AuthEvent {
-  final String phone;
-  const AuthOtpSendRequested(this.phone);
+class AuthLoginRequested extends AuthEvent {
+  final String identifier;
+  final String password;
+
+  const AuthLoginRequested({
+    required this.identifier,
+    required this.password,
+  });
+
+  // Passwords are deliberately excluded from event diagnostics.
   @override
-  List<Object?> get props => [phone];
+  List<Object?> get props => [identifier];
 }
 
-/// User submitted the OTP code
-class AuthOtpVerifyRequested extends AuthEvent {
-  final String phone;
-  final String code;
-  const AuthOtpVerifyRequested({required this.phone, required this.code});
-  @override
-  List<Object?> get props => [phone, code];
-}
-
-/// User tapped logout
 class AuthLogoutRequested extends AuthEvent {}
 
-// ── States ──────────────────────────────────────────────────────────────────
+class _AuthSessionExpired extends AuthEvent {}
 
 abstract class AuthState extends Equatable {
   const AuthState();
+
   @override
   List<Object?> get props => [];
 }
@@ -48,48 +46,53 @@ class AuthInitial extends AuthState {}
 
 class AuthLoading extends AuthState {}
 
-class AuthOtpSent extends AuthState {
-  final String phone;
-  const AuthOtpSent(this.phone);
-  @override
-  List<Object?> get props => [phone];
-}
-
 class AuthAuthenticated extends AuthState {
   final AuthUser user;
+
   const AuthAuthenticated(this.user);
+
   @override
   List<Object?> get props => [user];
 }
 
-class AuthUnauthenticated extends AuthState {}
+class AuthUnauthenticated extends AuthState {
+  final String? message;
 
-class AuthError extends AuthState {
-  final String message;
-  const AuthError(this.message);
+  const AuthUnauthenticated([this.message]);
+
   @override
   List<Object?> get props => [message];
 }
 
-// ── BLoC ────────────────────────────────────────────────────────────────────
+class AuthError extends AuthState {
+  final String message;
+
+  const AuthError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
 
 @injectable
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final SendOtpUseCase _sendOtp;
-  final VerifyOtpUseCase _verifyOtp;
+  final LoginUseCase _login;
   final GetStoredSessionUseCase _getSession;
   final LogoutUseCase _logout;
+  late final StreamSubscription<void> _sessionExpiredSubscription;
 
   AuthBloc(
-    this._sendOtp,
-    this._verifyOtp,
+    this._login,
     this._getSession,
     this._logout,
+    AuthSessionEvents sessionEvents,
   ) : super(AuthInitial()) {
     on<AuthCheckRequested>(_onCheckRequested);
-    on<AuthOtpSendRequested>(_onOtpSendRequested);
-    on<AuthOtpVerifyRequested>(_onOtpVerifyRequested);
+    on<AuthLoginRequested>(_onLoginRequested);
     on<AuthLogoutRequested>(_onLogoutRequested);
+    on<_AuthSessionExpired>((event, emit) => emit(AuthUnauthenticated()));
+    _sessionExpiredSubscription = sessionEvents.expired.listen(
+      (_) => add(_AuthSessionExpired()),
+    );
   }
 
   Future<void> _onCheckRequested(
@@ -97,32 +100,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final user = await _getSession();
-    if (user != null) {
-      emit(AuthAuthenticated(user));
-    } else {
-      emit(AuthUnauthenticated());
-    }
-  }
-
-  Future<void> _onOtpSendRequested(
-    AuthOtpSendRequested event,
-    Emitter<AuthState> emit,
-  ) async {
-    emit(AuthLoading());
-    final result = await _sendOtp(event.phone);
+    final result = await _getSession();
     result.fold(
       (error) => emit(AuthError(error)),
-      (_) => emit(AuthOtpSent(event.phone)),
+      (user) => emit(user == null ? AuthUnauthenticated() : AuthAuthenticated(user)),
     );
   }
 
-  Future<void> _onOtpVerifyRequested(
-    AuthOtpVerifyRequested event,
+  Future<void> _onLoginRequested(
+    AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
-    final result = await _verifyOtp(phone: event.phone, code: event.code);
+    final result = await _login(
+      identifier: event.identifier,
+      password: event.password,
+    );
     result.fold(
       (error) => emit(AuthError(error)),
       (user) => emit(AuthAuthenticated(user)),
@@ -133,7 +126,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    await _logout();
-    emit(AuthUnauthenticated());
+    final result = await _logout();
+    result.fold(
+      (error) => emit(AuthUnauthenticated(error)),
+      (_) => emit(AuthUnauthenticated()),
+    );
+  }
+
+  @override
+  Future<void> close() async {
+    await _sessionExpiredSubscription.cancel();
+    return super.close();
   }
 }

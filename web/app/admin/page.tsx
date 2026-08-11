@@ -1,184 +1,75 @@
-/**
- * Admin Dashboard Overview
- * Main dashboard with statistics and quick actions
- */
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getUser } from '@/lib/auth/session';
-import { getChurches } from '@/lib/api/churches';
-import { getUsers } from '@/lib/api/users';
+import { BookOpen, Building2, LayoutTemplate } from 'lucide-react';
 import AdminTopbar from '@/components/admin/AdminTopbar';
-import { Building2, Users, BookOpen, TrendingUp, LayoutTemplate } from 'lucide-react';
-
-interface DashboardStats {
-  totalChurches: number;
-  totalUsers: number;
-  totalCurricula: number;
-  activeStudents: number;
-}
+import { getChurches } from '@/lib/api/churches';
+import { getEducationalCurricula } from '@/lib/api/curricula';
+import { getUser } from '@/lib/auth/session';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const user = getUser();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalChurches: 0,
-    totalUsers: 0,
-    totalCurricula: 5, // Fixed: 5 curricula mentioned in docs
-    activeStudents: 0,
-  });
+  const [stats, setStats] = useState({ totalChurches: 0, totalCurricula: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      const [churches, users] = await Promise.all([
-        getChurches({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
-        getUsers({ page: 1, limit: 1000 }).catch(() => ({ data: [], meta: { total: 0, page: 1, limit: 1000, totalPages: 1, hasNextPage: false, hasPreviousPage: false } })),
+    const loadStats = async () => {
+      const [churches, curricula] = await Promise.all([
+        user?.type === 'super_admin' ? getChurches().catch(() => []) : Promise.resolve([]),
+        getEducationalCurricula().catch(() => []),
       ]);
-
-      setStats({
-        totalChurches: churches.meta.total,
-        totalUsers: users.meta.total,
-        totalCurricula: 5,
-        activeStudents: users.data.filter((u) => u.role === 'child').length,
-      });
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    } finally {
+      setStats({ totalChurches: churches.length, totalCurricula: curricula.length });
       setLoading(false);
-    }
-  };
+    };
+    void loadStats();
+  }, [user?.type]);
 
   const statCards = [
-    {
-      title: 'Total Churches',
-      value: stats.totalChurches,
-      icon: Building2,
-      color: 'bg-blue-500',
-      link: '/admin/churches',
-    },
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: Users,
-      color: 'bg-green-500',
-      link: '/admin/users',
-    },
-    {
-      title: 'Curricula',
-      value: stats.totalCurricula,
-      icon: BookOpen,
-      color: 'bg-purple-500',
-      link: '/admin/curricula',
-    },
-    {
-      title: 'Active Students',
-      value: stats.activeStudents,
-      icon: TrendingUp,
-      color: 'bg-orange-500',
-      link: '/admin/users',
-    },
+    ...(user?.type === 'super_admin' ? [{ title: 'Total Churches', value: stats.totalChurches, icon: Building2, color: 'bg-blue-500', link: '/admin/churches' }] : []),
+    { title: 'Curricula', value: stats.totalCurricula, icon: BookOpen, color: 'bg-purple-500', link: '/admin/curricula' },
   ];
 
   return (
     <>
       <AdminTopbar title="Dashboard" />
-      
       <div className="p-6">
-        {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {user?.name || 'Admin'}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Here's what's happening with Bible School today.
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.fullName || 'Admin'}!</h1>
+          <p className="mt-2 text-gray-600">Here is the current Graphy administration overview.</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
-              <div
-                key={card.title}
-                onClick={() => router.push(card.link)}
-                className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-lg transition-shadow"
-              >
+              <button key={card.title} onClick={() => router.push(card.link)} className="rounded-lg bg-white p-6 text-left shadow transition-shadow hover:shadow-lg">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      {card.title}
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {loading ? '...' : card.value}
-                    </p>
-                  </div>
-                  <div className={`${card.color} p-3 rounded-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
+                  <div><p className="text-sm font-medium text-gray-600">{card.title}</p><p className="mt-2 text-3xl font-bold text-gray-900">{loading ? '...' : card.value}</p></div>
+                  <div className={`${card.color} rounded-lg p-3`}><Icon className="h-6 w-6 text-white" /></div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => router.push('/admin/churches/new')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-            >
-              <Building2 className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Add Church</p>
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h2 className="mb-4 text-xl font-semibold text-gray-900">Quick Actions</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {user?.type === 'super_admin' && (
+              <button onClick={() => router.push('/admin/churches')} className="rounded-lg border-2 border-dashed border-gray-300 p-4 transition-colors hover:border-blue-500 hover:bg-blue-50">
+                <Building2 className="mx-auto mb-2 h-8 w-8 text-gray-400" /><p className="text-sm font-medium text-gray-700">Review Churches</p>
+              </button>
+            )}
+            {user?.type === 'super_admin' && (
+              <button onClick={() => router.push('/admin/content')} className="rounded-lg border-2 border-dashed border-gray-300 p-4 transition-colors hover:border-teal-500 hover:bg-teal-50">
+                <LayoutTemplate className="mx-auto mb-2 h-8 w-8 text-gray-400" /><p className="text-sm font-medium text-gray-700">Manage CMS Content</p>
+              </button>
+            )}
+            <button onClick={() => router.push('/admin/curricula')} className="rounded-lg border-2 border-dashed border-gray-300 p-4 transition-colors hover:border-purple-500 hover:bg-purple-50">
+              <BookOpen className="mx-auto mb-2 h-8 w-8 text-gray-400" /><p className="text-sm font-medium text-gray-700">View Curricula</p>
             </button>
-
-            <button
-              onClick={() => router.push('/admin/content')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors"
-            >
-              <LayoutTemplate className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Content</p>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/users/new')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-            >
-              <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">Add User</p>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/curricula')}
-              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
-            >
-              <BookOpen className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-700">
-                Manage Curricula
-              </p>
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Recent Activity
-          </h2>
-          <div className="text-center py-8 text-gray-500">
-            <p>No recent activity to display</p>
-            <p className="text-sm mt-2">Activity tracking coming soon</p>
           </div>
         </div>
       </div>

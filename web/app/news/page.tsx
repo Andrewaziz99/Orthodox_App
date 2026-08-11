@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { PageHero } from "@/components/ui/PageHero";
 import { useLang } from "@/components/providers/LanguageProvider";
 import { ArrowLeft, ArrowRight, Calendar } from 'lucide-react';
@@ -13,14 +12,15 @@ export default function NewsPage() {
   const { t, dir, locale } = useLang();
   const [articles, setArticles] = React.useState<DynamicNewsArticle[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const { content, loading: contentLoading } = useSiteContent('news_page');
+  const [error, setError] = React.useState<string | null>(null);
+  const { content, loading: contentLoading, error: contentError } = useSiteContent('news_page');
   const ArrowIcon = dir === 'rtl' ? ArrowLeft : ArrowRight;
 
   React.useEffect(() => {
-    getNewsArticles().then(data => {
-      setArticles(data);
-      setLoading(false);
-    });
+    getNewsArticles()
+      .then(setArticles)
+      .catch(() => setError('News is temporarily unavailable.'))
+      .finally(() => setLoading(false));
   }, []);
 
   const breadcrumbs = [
@@ -33,6 +33,7 @@ export default function NewsPage() {
   };
 
   if (loading || contentLoading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (error || contentError) return <div className="min-h-screen flex items-center justify-center bg-white text-slate-700">{error || contentError}</div>;
 
   return (
     <>
@@ -165,6 +166,11 @@ export default function NewsPage() {
               );
             })}
           </div>
+          {articles.length === 0 && (
+            <div className="rounded-3xl border border-slate-100 bg-slate-50 px-6 py-16 text-center text-slate-500">
+              {locale === 'ar' ? 'لا توجد أخبار منشورة حالياً.' : 'No news articles are published yet.'}
+            </div>
+          )}
         </div>
       </section>
     </>

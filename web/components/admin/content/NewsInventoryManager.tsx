@@ -4,20 +4,27 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { Card, Button } from '@/components/ui';
 import { getNewsArticles, upsertNews, deleteNews, uploadImage, DynamicNewsArticle } from '@/lib/api/content';
-import { getToken } from '@/lib/auth/session';
+import { handleApiError } from '@/lib/api/client';
 
 export function NewsInventoryManager() {
   const [articles, setArticles] = useState<DynamicNewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState<Partial<DynamicNewsArticle> | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchNews = async () => {
     setLoading(true);
-    const data = await getNewsArticles(true);
-    setArticles(data);
-    setLoading(false);
+    setLoadError(false);
+    try {
+      setArticles(await getNewsArticles(true));
+    } catch (error) {
+      console.error('Failed to load the news inventory', error);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -34,36 +41,43 @@ export function NewsInventoryManager() {
     }
 
     setSaving(true);
-    const token = getToken() || '';
-    const success = await upsertNews(editing as DynamicNewsArticle, token);
-    setSaving(false);
-    if (success) {
+    try {
+      await upsertNews(editing as DynamicNewsArticle);
       setEditing(null);
-      fetchNews();
-    } else {
-      alert('Failed to save article. Please ensure all fields are filled.');
+      await fetchNews();
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure?')) return;
-    const token = getToken() || '';
-    const success = await deleteNews(id, token);
-    if (success) fetchNews();
-    else alert('Failed to delete.');
+    try {
+      await deleteNews(id);
+      await fetchNews();
+    } catch (error) {
+      alert(handleApiError(error));
+    }
   };
 
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
-    const token = getToken() || '';
-    const url = await uploadImage(file, token);
-    setUploadingImage(false);
-    if (url && editing) setEditing({ ...editing, image: url });
+    try {
+      const url = await uploadImage(file);
+      if (editing) setEditing({ ...editing, image: url });
+    } catch (error) {
+      alert(handleApiError(error));
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const generateSlug = (title: string) => title.toLowerCase().trim().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
   if (loading) return <div className="animate-pulse h-64 bg-slate-100 rounded-2xl w-full" />;
+  if (loadError) return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">Unable to load the protected news inventory.</div>;
 
   return (
     <div className="space-y-6">
@@ -132,6 +146,14 @@ export function NewsInventoryManager() {
                     <input type="number" value={editing.order || 0} onChange={e => setEditing(prev => prev ? ({ ...prev, order: parseInt(e.target.value) }) : null)} className="w-full bg-slate-50 border-slate-200 rounded-xl p-3" />
                   </div>
                 </div>
+                <label className="flex items-center gap-3 text-sm font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={editing.published ?? false}
+                    onChange={e => setEditing(prev => prev ? ({ ...prev, published: e.target.checked }) : null)}
+                  />
+                  Published
+                </label>
               </div>
 
               <div className="space-y-6">
@@ -163,7 +185,7 @@ export function NewsInventoryManager() {
               <h2 className="text-2xl font-black text-slate-900">News Articles</h2>
               <Button onClick={() => setEditing({ 
                 id: '', // Empty ID for new item
-                published: true, 
+                 published: false,
                 order: 0,
                 titleAr: '',
                 titleEn: '',
